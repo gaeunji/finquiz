@@ -12,9 +12,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'Economics Quiz App',
       debugShowCheckedModeBanner: false,
-      home: MainScaffold(),
+      home: const HomeScreen(),
+      routes: {
+        '/intro': (context) => const CurrentIntroScreen(),
+      },
     );
   }
 }

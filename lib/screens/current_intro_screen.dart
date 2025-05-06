@@ -1,32 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class OverlayCardScreen extends StatelessWidget {
-  const OverlayCardScreen({super.key});
+class CurrentIntroScreen extends StatefulWidget {
+  const CurrentIntroScreen({super.key});
+
+  @override
+  State<CurrentIntroScreen> createState() => _CurrentIntroScreenState();
+}
+
+class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
+  late String name; // 카테고리 이름
+  String description = '';
+  List<String> keywords = [];
+  bool isLoading = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    name = ModalRoute.of(context)!.settings.arguments as String;
+    fetchCategoryIntro();
+  }
+
+  Future<void> fetchCategoryIntro() async {
+    final encodedName = Uri.encodeComponent(name);
+    final url = Uri.parse('http://localhost:5000/categories/name/$encodedName'); // 실제 IP로 변경 가능
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          description = data['description'] ?? '';
+          keywords = List<String>.from(data['keywords'] ?? []);
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          description = '카테고리 정보를 불러올 수 없습니다.';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        description = '네트워크 오류가 발생했습니다.';
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC), // 배경색
+      backgroundColor: const Color(0xFFF7F9FC),
       body: Stack(
         children: [
-          // 배경 컨텐츠
           Positioned.fill(
-            child: Container(
-              color: const Color(0xFFF7F9FC),
-            ),
+            child: Container(color: const Color(0xFFF7F9FC)),
           ),
-
-          // 하단 고정 카드
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
@@ -35,32 +75,44 @@ class OverlayCardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 상단 아이콘 줄
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
                       Icon(Icons.arrow_back_ios, color: Colors.grey),
-                      Icon(Icons.bookmark, color: Colors.grey),
+                      Icon(Icons.bookmark_border, color: Colors.grey),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // 여기부터 콘텐츠
-                  const Text(
-                    '금융·투자',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  Center(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    '금융·투자 카테고리는 개인과 기업의 자금 운용, 투자 전략, 금융시장과 상품에 대한 이해를 높이는 데 중점을 둡니다. 이 카테고리를 통해 돈의 흐름, 금융기관의 역할, 투자 리스크와 수익률 간의 균형 등에 대해 배울 수 있습니다.',
+                  Text(
+                    description,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black87),
+                    style: const TextStyle(fontSize: 14),
                   ),
+                  const SizedBox(height: 12),
+                  if (keywords.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: keywords
+                          .map((k) => Chip(label: Text(k)))
+                          .toList(),
+                    ),
                 ],
               ),
             ),

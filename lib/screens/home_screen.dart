@@ -259,17 +259,22 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             Column(
-              children:
-                  selectedCategories
-                      .map(
-                        (cat) => CategoryCard(
-                          icon: cat.icon,
-                          label: cat.label,
-                          color: cat.color,
-                        ),
-                      )
-                      .toList(),
+              children: selectedCategories.map((cat) {
+                return CategoryCard(
+                  icon: cat.icon,
+                  label: cat.label,
+                  color: cat.color,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/intro',
+                      arguments: cat.label,
+                    );
+                  },
+                ),
+              }).toList(),
             ),
+
 
             const SizedBox(height: 60),
           ],
