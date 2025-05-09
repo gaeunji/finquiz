@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/explore_screen.dart';
 import 'screens/current_intro_screen.dart';
+import 'screens/all_categories_screen.dart';
+import 'screens/quiz_session_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,6 +20,8 @@ class MyApp extends StatelessWidget {
       home: const HomeScreen(),
       routes: {
         '/intro': (context) => const CurrentIntroScreen(),
+        '/all-categories': (context) => const AllCategoriesScreen(),
+        '/quiz': (context) => const QuizSessionScreenWrapper(),
       },
     );
   }
