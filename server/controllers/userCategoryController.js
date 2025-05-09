@@ -1,6 +1,6 @@
 const pool = require("../db");
 
-// 카테고리 추가
+// 내 카테고리 추가
 exports.addCategory = async (req, res) => {
   const { userId } = req.params;
   const { categoryId } = req.body;
@@ -11,17 +11,14 @@ exports.addCategory = async (req, res) => {
 
   try {
     await pool.query(
-      `
-      INSERT INTO user_categories (user_id, category_id)
-      VALUES ($1, $2)
-      ON CONFLICT DO NOTHING;
-    `,
+      `INSERT INTO user_categories (user_id, category_id)
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
       [userId, categoryId]
     );
 
-    res.status(201).json({ message: "카테고리가 내 목록에 추가되었습니다." });
+    res.status(201).json({ message: "카테고리가 추가되었습니다." });
   } catch (err) {
-    console.error("카테고리 추가 실패:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -32,32 +29,24 @@ exports.getUserCategories = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `
-      SELECT c.category_id, c.name
-      FROM user_categories uc
-      JOIN categories c ON uc.category_id = c.category_id
-      WHERE uc.user_id = $1;
-    `,
+      `SELECT c.* FROM user_categories uc
+       JOIN categories c ON uc.category_id = c.id
+       WHERE uc.user_id = $1`,
       [userId]
     );
-
     res.json(result.rows);
   } catch (err) {
-    console.error("내 카테고리 조회 실패:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// 카테고리 삭제
+// 내 카테고리 삭제
 exports.removeCategory = async (req, res) => {
   const { userId, categoryId } = req.params;
 
   try {
     const result = await pool.query(
-      `
-      DELETE FROM user_categories
-      WHERE user_id = $1 AND category_id = $2;
-    `,
+      `DELETE FROM user_categories WHERE user_id = $1 AND category_id = $2`,
       [userId, categoryId]
     );
 
@@ -67,7 +56,6 @@ exports.removeCategory = async (req, res) => {
 
     res.json({ message: "카테고리가 삭제되었습니다." });
   } catch (err) {
-    console.error("카테고리 삭제 실패:", err);
     res.status(500).json({ error: err.message });
   }
 };
