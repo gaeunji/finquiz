@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class QuizSessionScreen extends StatefulWidget {
   final int sessionId;
-  final List<String> quizIds;
+  final List<int> quizIds;
 
   const QuizSessionScreen({
     super.key,
@@ -20,7 +20,8 @@ class QuizSessionScreen extends StatefulWidget {
 class _QuizSessionScreenState extends State<QuizSessionScreen> {
   int currentIndex = 0;
   List<Map<String, dynamic>> quizData = [];
-  Map<int, String> userAnswers = {};
+  Map<int, int> selectedAnswerIndex = {}; // questionId -> index
+
   bool isLoading = true;
 
   @override
@@ -44,14 +45,13 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     final url = Uri.parse('http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete');
     final answers = quizData.map((q) => {
       'questionId': q['id'],
-      'selectedAnswer': userAnswers[q['id']] ?? '',
+      'selectedAnswer': q['options'][selectedAnswerIndex[q['id']] ?? 0],
     }).toList();
 
     final response = await http.post(url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'answers': answers}),
     );
-
 
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
@@ -69,58 +69,150 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
 
     final quiz = quizData[currentIndex];
     final options = List<String>.from(quiz['options']);
+    final questionId = quiz['id'] is int ? quiz['id'] : int.tryParse(quiz['id'].toString());
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('문제 ${currentIndex + 1} / ${quizData.length}'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              quiz['question'],
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            ...options.map((opt) => RadioListTile<String>(
-              title: Text(opt),
-              value: opt,
-              groupValue: userAnswers[quiz['id']],
-              onChanged: (val) {
-                setState(() {
-                  userAnswers[quiz['id']] = val!;
-                });
-              },
-            )),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: currentIndex > 0
-                      ? () => setState(() => currentIndex--)
-                      : null,
-                  child: const Text('이전'),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 26.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: (currentIndex + 1) / quizData.length,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xff006FFD)),
                 ),
-                currentIndex < quizData.length - 1
-                    ? ElevatedButton(
-                  onPressed: () => setState(() => currentIndex++),
-                  child: const Text('다음'),
-                )
-                    : ElevatedButton(
-                  onPressed: submitAll,
-                  child: const Text('제출'),
+              ),
+              const SizedBox(height: 30),
+              Text(
+                'Q. ${quiz['question']}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            )
-          ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '정답을 선택하세요.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 30),
+              ...List.generate(options.length, (index) {
+                return Column(
+                  children: [
+                    AnswerOption(
+                      text: options[index],
+                      isSelected: selectedAnswerIndex[questionId] == index,
+                      onTap: () {
+                        setState(() {
+                          selectedAnswerIndex[questionId] = index;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                );
+              }),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 30.0),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: currentIndex < quizData.length - 1
+                          ? () => setState(() => currentIndex++)
+                          : submitAll,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xff006FFD),
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        currentIndex < quizData.length - 1 ? '다음' : '제출',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
+class AnswerOption extends StatelessWidget {
+  final String text;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const AnswerOption({
+    super.key,
+    required this.text,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.grey.shade300,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          color: isSelected ? const Color(0xffEAF2FF): Colors.transparent,
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class QuizSessionScreenWrapper extends StatelessWidget {
@@ -130,7 +222,7 @@ class QuizSessionScreenWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as Map;
     final sessionId = args['sessionId'] as int;
-    final quizIds = List<String>.from(args['quizIds']);
+    final quizIds = List<int>.from(args['quizIds']);
 
     return QuizSessionScreen(
       sessionId: sessionId,
@@ -138,5 +230,3 @@ class QuizSessionScreenWrapper extends StatelessWidget {
     );
   }
 }
-
-
