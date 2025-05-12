@@ -62,7 +62,7 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
       '행동경제학': 7,
     };
 
-    final userId = 123; // 🔧 실제 유저 ID로 대체
+    final userId = 123; // TODO: 실제 유저 ID로 대체
     final categoryId = categoryMap[name];
 
     if (categoryId == null) {
@@ -85,7 +85,7 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
     if (response.statusCode == 201) {
       final data = json.decode(response.body);
       final sessionId = data['sessionId'];
-      final quizIds = List<int>.from(data['quizIds']);
+      final quizIds = List<int>.from(data['quizIds']); // quiz_id List<int>로 받음
       Navigator.pushNamed(context, '/quiz', arguments: {
         'sessionId': sessionId,
         'quizIds': quizIds,

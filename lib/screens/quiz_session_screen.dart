@@ -21,6 +21,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
   int currentIndex = 0;
   List<Map<String, dynamic>> quizData = [];
   Map<int, int> selectedAnswerIndex = {}; // questionId -> index
+
   bool isLoading = true;
 
   @override
