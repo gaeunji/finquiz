@@ -85,7 +85,7 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
     if (response.statusCode == 201) {
       final data = json.decode(response.body);
       final sessionId = data['sessionId'];
-      final quizIds = List<String>.from(data['quizIds']);
+      final quizIds = List<int>.from(data['quizIds']);
       Navigator.pushNamed(context, '/quiz', arguments: {
         'sessionId': sessionId,
         'quizIds': quizIds,

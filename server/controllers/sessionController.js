@@ -1,5 +1,15 @@
 const pool = require("../db");
 
+const categoryMap = {
+  macro: 1,
+  intl: 2,
+  finance: 3,
+  basic: 4,
+  micro: 5,
+  current: 6,
+  behav: 7,
+};
+
 // 세션 생성 (카테고리 기반)
 exports.createSessionByCategory = async (req, res) => {
   const categoryId = Number(req.body.categoryId);
@@ -54,6 +64,7 @@ exports.createSessionByCategory = async (req, res) => {
       return res.status(404).json({ message: "출제할 퀴즈가 없습니다." });
     }
 
+    // 세션 저장
     const insertSession = `
       INSERT INTO quiz_sessions (quiz_ids, user_id)
       VALUES ($1, $2)
