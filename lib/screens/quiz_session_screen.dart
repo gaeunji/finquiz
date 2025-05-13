@@ -23,10 +23,12 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
   Map<int, int> selectedAnswerIndex = {}; // questionId -> index
 
   bool isLoading = true;
+  late DateTime startTime;
 
   @override
   void initState() {
     super.initState();
+    startTime = DateTime.now();
     fetchAllQuizzes();
   }
 
@@ -42,6 +44,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
   }
 
   void submitAll() async {
+    final endTime = DateTime.now();
+    final quizDuration = endTime.difference(startTime);
+
     final url = Uri.parse('http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete');
     final answers = quizData.map((q) => {
       'questionId': q['id'],
@@ -55,9 +60,18 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
 
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
-      // 결과 화면 이동
+
+      Navigator.pushReplacementNamed(context, '/result', arguments: {
+        'sessionId': widget.sessionId,
+        'score': result['score'],
+        'total': result['total'],
+        'xp': result['score'] * 10,
+        'duration': quizDuration.inSeconds,
+        'results': result['results'],
+      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
