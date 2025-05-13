@@ -79,7 +79,7 @@ exports.createSessionByCategory = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-// 세션 결과 제출 (채점 + 기록)
+
 exports.completeSession = async (req, res) => {
   const sessionId = req.params.sessionId;
   const { answers } = req.body;
@@ -150,24 +150,23 @@ exports.completeSession = async (req, res) => {
       [sessionId]
     );
 
-    res
-      .status(200)
-      .json({ score: correctCount, total: answers.length, results });
+    // XP 업데이트
+    const xpEarned = correctCount * 10;
+    await pool.query(`UPDATE users SET xp = xp + $1 WHERE user_id = $2;`, [
+      xpEarned,
+      userId,
+    ]);
+
+    // 응답 반환
+    res.status(200).json({
+      score: correctCount,
+      total: answers.length,
+      results,
+    });
   } catch (err) {
     console.error("세션 완료 실패:", err);
     res.status(500).json({ error: err.message });
   }
-
-  const xpEarned = correctCount * 10;
-
-  await pool.query(
-    `
-    UPDATE users
-    SET xp = xp + $1
-    WHERE user_id = $2;
-  `,
-    [xpEarned, userId]
-  );
 };
 
 // 사용자가 문제를 푼 로그 기록 (복습용)
