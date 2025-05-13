@@ -107,13 +107,13 @@ exports.completeSession = async (req, res) => {
       const { questionId, selectedAnswer } = ans;
 
       const questionRes = await pool.query(
-        `SELECT answer, explanation FROM questions WHERE question_id = $1`,
+        `SELECT correct_answer, explanation FROM questions WHERE question_id = $1`,
         [questionId]
       );
 
       if (questionRes.rows.length === 0) continue;
 
-      const correctAnswer = questionRes.rows[0].answer;
+      const correctAnswer = questionRes.rows[0].correct_answer;
       const explanation = questionRes.rows[0].explanation;
       const isCorrect = selectedAnswer === correctAnswer;
 
