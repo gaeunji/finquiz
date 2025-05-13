@@ -80,7 +80,7 @@ exports.submitAnswer = async (req, res) => {
 
   try {
     const query = `
-      SELECT answer, explanation
+      SELECT correct_answer, explanation
       FROM questions
       WHERE question_id = $1
       LIMIT 1;
@@ -92,7 +92,7 @@ exports.submitAnswer = async (req, res) => {
     }
 
     const quiz = result.rows[0];
-    const isCorrect = quiz.answer === userAnswer;
+    const isCorrect = quiz.correct_answer === userAnswer;
 
     res.json({
       correct: isCorrect,
