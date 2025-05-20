@@ -5,6 +5,7 @@ import 'screens/current_intro_screen.dart';
 import 'screens/all_categories_screen.dart';
 import 'screens/quiz_session_screen.dart';
 import 'screens/quiz_result_screen.dart';
+import 'screens/quiz_review_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         '/intro': (context) => const CurrentIntroScreen(),
         '/all-categories': (context) => const AllCategoriesScreen(),
         '/quiz': (context) => const QuizSessionScreenWrapper(),
+        '/review': (context) => const QuizReviewScreenWrapper(),
         '/result': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map;
           return QuizResultScreen(

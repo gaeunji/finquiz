@@ -19,7 +19,13 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    name = ModalRoute.of(context)!.settings.arguments as String;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args == null || args is! String) {
+      // fallback or error handling
+      Navigator.pop(context);
+      return;
+    }
+    name = args;
     fetchCategoryIntro();
   }
 
@@ -65,6 +71,7 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
     final userId = 123; // TODO: 실제 유저 ID로 대체
     final categoryId = categoryMap[name];
 
+
     if (categoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('유효하지 않은 카테고리입니다.')),
@@ -81,6 +88,7 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
         'userId': userId,
       }),
     );
+
 
     if (response.statusCode == 201) {
       final data = json.decode(response.body);

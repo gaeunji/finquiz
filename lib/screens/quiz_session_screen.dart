@@ -36,6 +36,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     for (var id in widget.quizIds) {
       final url = Uri.parse('http://10.0.2.2:5000/quizzes/$id');
       final response = await http.get(url);
+      // print('응답 상태: ${response.statusCode}'); \
+      // print('문제 내용: ${response.body}');
+
       if (response.statusCode == 200) {
         quizData.add(json.decode(response.body));
       }
@@ -52,6 +55,10 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
       'questionId': q['id'],
       'selectedAnswer': q['options'][selectedAnswerIndex[q['id']] ?? 0],
     }).toList();
+
+    // print('정답 제출 요청 URL: $url');
+    // print('제출 데이터: ${json.encode({'answers': answers})}');
+
 
     final response = await http.post(url,
       headers: {'Content-Type': 'application/json'},
