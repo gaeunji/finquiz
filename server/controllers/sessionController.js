@@ -12,6 +12,12 @@ const categoryMap = {
 
 // 세션 생성 (카테고리 기반)
 exports.createSessionByCategory = async (req, res) => {
+  console.log("📥 [세션 생성 요청] 클라이언트 요청 데이터:", req.body);
+  // 1. 입력 유효성 검사
+  if (!req.body.categoryId || !req.body.userId) {
+    return res.status(400).json({ error: "categoryId와 userId는 필수입니다." });
+  }
+
   const categoryId = Number(req.body.categoryId);
   const userId = Number(req.body.userId);
 
@@ -22,6 +28,7 @@ exports.createSessionByCategory = async (req, res) => {
   }
 
   try {
+    // 2. 안 푼 문제 최대 5개 추출
     const newQuizQuery = `
       SELECT question_id
       FROM questions
@@ -35,36 +42,35 @@ exports.createSessionByCategory = async (req, res) => {
     const newQuizResult = await pool.query(newQuizQuery, [categoryId, userId]);
     let quizIds = newQuizResult.rows.map((row) => row.question_id);
 
+    // 3. 부족할 경우 -> 중복 허용 문제로 보완
     if (quizIds.length < 5) {
       const remainingCount = 5 - quizIds.length;
-      const reviewQuery = `
+      const fallbackQuery = `
         SELECT question_id
         FROM questions
         WHERE category_id = $1
-          AND question_id IN (
-            SELECT question_id
-            FROM user_question_log
-            WHERE user_id = $2
-              AND answered_at < NOW() - INTERVAL '7 days'
-          )
-          AND question_id NOT IN (${quizIds
-            .map((_, i) => `$${i + 3}`)
-            .join(", ")})
         ORDER BY RANDOM()
-        LIMIT $${quizIds.length + 3};
+        LIMIT $2;
       `;
-
-      const params = [categoryId, userId, ...quizIds, remainingCount];
-      const reviewResult = await pool.query(reviewQuery, params);
-      const reviewIds = reviewResult.rows.map((row) => row.question_id);
-      quizIds = quizIds.concat(reviewIds);
+      const fallbackResult = await pool.query(fallbackQuery, [
+        categoryId,
+        remainingCount,
+      ]);
+      const fallbackIds = fallbackResult.rows.map((row) => row.question_id);
+      quizIds = quizIds.concat(fallbackIds);
     }
 
+    // 배열이 비어있으면 예외 처리
     if (quizIds.length === 0) {
-      return res.status(404).json({ message: "출제할 퀴즈가 없습니다." });
+      return res
+        .status(404)
+        .json({ error: "해당 카테고리에 출제할 퀴즈가 없습니다." });
     }
 
-    // 세션 저장
+    // 중복 제거
+    quizIds = [...new Set(quizIds)];
+
+    // 5. 세션 저장
     const insertSession = `
       INSERT INTO quiz_sessions (quiz_ids, user_id)
       VALUES ($1, $2)
@@ -72,6 +78,9 @@ exports.createSessionByCategory = async (req, res) => {
     `;
     const sessionResult = await pool.query(insertSession, [quizIds, userId]);
     const sessionId = sessionResult.rows[0].session_id;
+
+    console.log("📤 [세션 생성 응답] sessionId:", sessionId);
+    console.log("📤 [세션 생성 응답] quizIds:", quizIds);
 
     res.status(201).json({ sessionId, quizIds });
   } catch (err) {
@@ -107,12 +116,13 @@ exports.completeSession = async (req, res) => {
       const { questionId, selectedAnswer } = ans;
 
       const questionRes = await pool.query(
-        `SELECT correct_answer, explanation FROM questions WHERE question_id = $1`,
+        `SELECT question_text, correct_answer, explanation FROM questions WHERE question_id = $1`,
         [questionId]
       );
 
       if (questionRes.rows.length === 0) continue;
 
+      const questionText = questionRes.rows[0].question_text;
       const correctAnswer = questionRes.rows[0].correct_answer;
       const explanation = questionRes.rows[0].explanation;
       const isCorrect = selectedAnswer === correctAnswer;
@@ -138,6 +148,7 @@ exports.completeSession = async (req, res) => {
 
       results.push({
         questionId,
+        questionText,
         selectedAnswer,
         correctAnswer,
         explanation,
