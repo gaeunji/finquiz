@@ -45,7 +45,7 @@ class _BookmarkIconState extends State<BookmarkIcon> {
     }
   }
 
-  // 북마크 상태 토글하는 함수
+  // 북마크 상태 토글하는 함수 (추가 <-> 삭제)
   Future<void> toggleBookmark() async {
     setState(() => isLoading = true);
     final url = isBookmarked
