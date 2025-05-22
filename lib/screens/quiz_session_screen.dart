@@ -241,9 +241,19 @@ class QuizSessionScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map;
-    final sessionId = args['sessionId'] as int;
-    final quizIds = List<int>.from(args['quizIds']);
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    print('arguments: $args');
+    if (args == null || args['sessionId'] == null || args['quizIds'] == null) {
+      return const Scaffold(
+        body: Center(child: Text('잘못된 접근입니다.')),
+      );
+    }
+
+    final int sessionId = args['sessionId'] is String
+        ? int.tryParse(args['sessionId'].toString()) ?? -1
+        : args['sessionId'] as int;
+
+    final List<int> quizIds = List<int>.from(args['quizIds']);
 
     return QuizSessionScreen(
       sessionId: sessionId,

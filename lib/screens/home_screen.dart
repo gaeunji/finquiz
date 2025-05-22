@@ -26,7 +26,9 @@ class _HomeScreenState extends State<HomeScreen> {
   // 사용자 카테고리 불러온느 함수
   Future<List<dynamic>> fetchUserCategories() async {
     final userId = '123'; // 임시 사용자 ID
-    final url = Uri.parse('http://10.0.2.2:5000/user-categories/$userId/categories');
+    final url = Uri.parse(
+      'http://10.0.2.2:5000/user-categories/$userId/categories',
+    );
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -41,8 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _userCategories = fetchUserCategories();
     });
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -308,36 +308,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('북마크한 카테고리가 없습니다.'));
                 }
-                final categories = snapshot.data!;
 
+                final categories = snapshot.data!;
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Wrap(
                     spacing: 16,
                     runSpacing: 16,
                     children: categories.map((cat) {
-                      return Container(
-                        width: 140,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          cat['name'],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
+                      final dynamic rawId = cat['id'];
+                      final dynamic rawLabel = cat['name'];
+
+                      if (rawId == null || rawLabel == null) return const SizedBox();
+
+                      final int id = rawId is String ? int.tryParse(rawId) ?? 0 : rawId as int;
+                      final String label = rawLabel.toString();
+
+                      return CategoryCard(
+                        categoryId: id,
+                        label: label,
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/intro',
+                            arguments: {'id': id},
+                          );
+                        },
                       );
+
                     }).toList(),
+
                   ),
                 );
               },
             ),
+
             const SizedBox(height: 32),
           ],
         ),
