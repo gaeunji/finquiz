@@ -172,7 +172,8 @@ class QuizReviewScreen extends StatelessWidget {
                   right: 2,
                   child: BookmarkIcon(
                     userId: 123, // 실제 유저 ID로 대체
-                    questionId: item['questionId'], // results 내 포함되어야 함
+                    targetId: item['questionId'],
+                    type: BookmarkType.question,
                   ),
                 ),
               ],

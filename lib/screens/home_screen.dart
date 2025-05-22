@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/category_card.dart';
 import '../models/category.dart';
 import '../data/categories.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 final List<int> xpData = [40, 30, 60, 20, 70, 50, 80];
 
@@ -13,15 +15,34 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Category> selectedCategories = allCategories.sublist(0, 3);
+  late Future<List<dynamic>> _userCategories;
 
-  void addCategory(Category category) {
-    if (!selectedCategories.any((c) => c.label == category.label)) {
-      setState(() {
-        selectedCategories.add(category);
-      });
+  @override
+  void initState() {
+    super.initState();
+    _userCategories = fetchUserCategories();
+  }
+
+  // 사용자 카테고리 불러온느 함수
+  Future<List<dynamic>> fetchUserCategories() async {
+    final userId = '123'; // 임시 사용자 ID
+    final url = Uri.parse('http://10.0.2.2:5000/user-categories/$userId/categories');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('카테고리 불러오기 실패');
     }
   }
+
+  void refreshCategories() {
+    setState(() {
+      _userCategories = fetchUserCategories();
+    });
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -61,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const CircleAvatar(
                     radius: 28,
-                    backgroundImage: AssetImage('assets/avatar.png'),
+                    backgroundImage: AssetImage('assets/images/avatar.png'),
                   ),
                 ],
               ),
@@ -93,7 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My level', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(
+                            'My level',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           Text(
                             '419 / 1500 XP',
                             style: TextStyle(color: Colors.grey, fontSize: 12),
@@ -215,14 +242,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(Icons.local_fire_department, color: Color(0xFF344BFD)),
                     SizedBox(width: 12),
                     Expanded(
-                      child: Text('연속 학습 일수', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        '연속 학습 일수',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     Text(
                       '188',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF344BFD)
+                        color: Color(0xFF344BFD),
                       ),
                     ),
                   ],
@@ -249,34 +282,63 @@ class _HomeScreenState extends State<HomeScreen> {
                         context,
                         '/all-categories',
                       );
-                      if (result is Category) {
-                        addCategory(result);
+                      // 사용자가 AllCategoriesScreen에서 카테고리를 북마크하면,
+                      // 서버에서 최신 사용자 카테고리 목록을 다시 불러옴
+                      if (result == true) {
+                        await Future.delayed(Duration(milliseconds: 100));
+                        refreshCategories();
                       }
                     },
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            FutureBuilder<List<dynamic>>(
+              future: _userCategories,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            Column(
-              children: selectedCategories.map((cat) {
-                return CategoryCard(
-                  icon: cat.icon,
-                  label: cat.label,
-                  color: cat.color,
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/intro',
-                      arguments: cat.label,
-                    );
-                  },
+                if (snapshot.hasError) {
+                  return Center(child: Text('에러: ${snapshot.error}'));
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('북마크한 카테고리가 없습니다.'));
+                }
+                final categories = snapshot.data!;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: categories.map((cat) {
+                      return Container(
+                        width: 140,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          cat['name'],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 );
-              }).toList(),
+              },
             ),
-
-
-            const SizedBox(height: 60),
+            const SizedBox(height: 32),
           ],
         ),
       ),

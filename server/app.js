@@ -14,9 +14,9 @@ const categoryRoutes = require("./routes/categoryRoutes");
 app.use("/categories", categoryRoutes);
 
 const userCategoryRoutes = require("./routes/userCategoryRoutes");
-app.use("/users", userCategoryRoutes);
+app.use("/user-categories", userCategoryRoutes);
 
 const bookmarkRoutes = require("./routes/bookmarkRoutes");
-app.use("/users", bookmarkRoutes);
+app.use("/user-bookmarks", bookmarkRoutes);
 
 module.exports = app;

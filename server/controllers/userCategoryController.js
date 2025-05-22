@@ -5,6 +5,8 @@ exports.addCategory = async (req, res) => {
   const { userId } = req.params;
   const { categoryId } = req.body;
 
+  console.log("받은 categoryId:", categoryId);
+
   if (!categoryId) {
     return res.status(400).json({ error: "categoryId가 필요합니다." });
   }
