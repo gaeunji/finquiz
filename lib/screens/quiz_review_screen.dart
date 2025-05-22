@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/bookmark_icon.dart';
 
 class QuizReviewScreen extends StatelessWidget {
   final List<dynamic> results; // 퀴즈 결과 데이터 리스트 받아옴
@@ -32,128 +33,149 @@ class QuizReviewScreen extends StatelessWidget {
           // 각 문제별 해설 카드
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                // 문제 제목 + 정오 아이콘
-                children: [
-                  Row(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    // 문제 제목 + 정오 아이콘
                     children: [
-                      Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              isCorrect ? Colors.green[100] : Colors.red[100],
-                        ),
-                        child: Icon(
-                          isCorrect ? Icons.check : Icons.close,
-                          color: isCorrect ? Colors.green : Colors.red,
-                          size: 12,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2), // 1. 아이콘과 안 겹치게 위 여백 추가하는 방법
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container( // ✅ 정답/오답 원 아이콘
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isCorrect ? Colors.green[100] : Colors.red[100],
+                              ),
+                              child: Icon(
+                                isCorrect ? Icons.check : Icons.close,
+                                color: isCorrect ? Colors.green : Colors.red,
+                                size: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 24), // 2. 아이콘과 안 겹치게 문제 오른쪽 여백 추가하는 방법
+                                child: Text(
+                                  '문제 ${index + 1}: ${item['questionText'] ?? '질문을 불러올 수 없습니다.'}',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // 문제 내용 텍스트
-                      Expanded(
-                        child: Text(
-                          '문제 ${index + 1}: ${item['questionText'] ?? '질문을 불러올 수 없습니다.'}',
-                          style: const TextStyle(fontSize: 14),
+
+                      const SizedBox(height: 12),
+
+                      // 사용자 답변
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black,
+                            ),
+                            children: [
+                              const TextSpan(text: '내 답변: '),
+                              TextSpan(
+                                text: item['selectedAnswer'],
+                                style: TextStyle(
+                                  color: isCorrect ? Colors.black : Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+
+                      // 실제 정답
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black,
+                            ),
+                            children: [
+                              const TextSpan(text: '정답: '),
+                              TextSpan(
+                                text: item['correctAnswer'],
+                                style: const TextStyle(color: Colors.green),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // 해설 박스
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEAF2FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '해설',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF3366CC),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item['explanation'] ?? '-',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // 사용자 답변
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black,
-                        ),
-                        children: [
-                          const TextSpan(text: '내 답변: '),
-                          TextSpan(
-                            text: item['selectedAnswer'],
-                            style: TextStyle(
-                              color: isCorrect ? Colors.black : Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                ),
+                // 북마크 아이콘
+                Positioned(
+                  top: 8,
+                  right: 2,
+                  child: BookmarkIcon(
+                    userId: 123, // 실제 유저 ID로 대체
+                    questionId: item['questionId'], // results 내 포함되어야 함
                   ),
-                  const SizedBox(height: 4),
-
-                  // 실제 정답
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black,
-                        ),
-                        children: [
-                          const TextSpan(text: '정답: '),
-                          TextSpan(
-                            text: item['correctAnswer'],
-                            style: const TextStyle(color: Colors.green),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 해설 박스
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF2FF),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '해설',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF3366CC),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            item['explanation'] ?? '-',
-                            style: const TextStyle(fontSize: 13, height: 1.4),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
