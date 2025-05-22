@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'quiz_session_screen.dart';
 import '../widgets/bookmark_icon.dart';
 
 class CurrentIntroScreen extends StatefulWidget {
@@ -12,102 +11,97 @@ class CurrentIntroScreen extends StatefulWidget {
 }
 
 class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
-  late int categoryId;
-  late String name; // 카테고리 이름
-  String description = '';
-  List<String> keywords = [];
+  final int userId = 123;
+
+  int? categoryId;
+  Map<String, dynamic>? categoryData;
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    final id = args?['categoryId'] as int?;
-    final title = args?['name'] as String?;
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
-    if (id == null || title == null) {
-      Navigator.pop(context);
+    if (args == null || args['id'] == null) {
+      setState(() {
+        errorMessage = '카테고리 ID가 전달되지 않았습니다.';
+        isLoading = false;
+      });
       return;
     }
-    // 전달받은 인자를 categoryId, name 필드에 저장
-    categoryId = id; // 클래스 필드에 할당
-    name = title;
 
-    fetchCategoryIntro();
+    categoryId = args['id'];
+    fetchCategoryDetail(categoryId!);
   }
 
-  Future<void> fetchCategoryIntro() async {
-    final encodedName = Uri.encodeComponent(name);
-    final url = Uri.parse(
-      'http://10.0.2.2:5000/categories/name/$encodedName',
-    ); // 실제 IP로 변경 가능
-
+  Future<void> fetchCategoryDetail(int id) async {
+    final url = Uri.parse('http://10.0.2.2:5000/categories/$id');
     try {
-      final response = await http.get(url);
+      final res = await http.get(url);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (res.statusCode == 200) {
         setState(() {
-          description = data['description'] ?? '';
-          keywords = List<String>.from(data['keywords'] ?? []);
+          categoryData = json.decode(res.body);
           isLoading = false;
         });
       } else {
         setState(() {
-          description = '카테고리 정보를 불러올 수 없습니다.';
+          errorMessage = '카테고리 정보를 불러오지 못했습니다.';
           isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        description = '네트워크 오류가 발생했습니다.';
+        errorMessage = '서버 통신 오류: $e';
         isLoading = false;
       });
     }
   }
 
   Future<void> createQuizSession() async {
-    final categoryMap = {
-      '거시경제학': 1,
-      '국제경제·무역': 2,
-      '금융·투자': 3,
-      '기초 경제 개념': 4,
-      '미시경제학': 5,
-      '시사 상식': 6,
-      '행동경제학': 7,
-    };
-
-    final userId = 123; // TODO: 실제 유저 ID로 대체
-
     final url = Uri.parse('http://10.0.2.2:5000/quizzes/session');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'categoryId': categoryId, 'userId': userId}),
-    );
 
-    if (response.statusCode == 201) {
-      final data = json.decode(response.body);
-      final sessionId = data['sessionId'];
-      final quizIds = List<int>.from(data['quizIds']); // quiz_id List<int>로 받음
-      Navigator.pushNamed(
-        context,
-        '/quiz',
-        arguments: {'sessionId': sessionId, 'quizIds': quizIds},
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'categoryId': categoryId, 'userId': userId}),
       );
-    } else {
-      final error = json.decode(response.body)['error'] ?? '알 수 없는 오류';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('퀴즈 세션 생성 실패: $error')));
+
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        final sessionId = data['sessionId'];
+        final quizIds = List<int>.from(data['quizIds']);
+        Navigator.pushNamed(
+          context,
+          '/quiz',
+          arguments: {'sessionId': sessionId, 'quizIds': quizIds},
+        );
+      } else {
+        final error = json.decode(response.body)['error'] ?? '알 수 없는 오류';
+        showSnackBar('퀴즈 세션 생성 실패: $error');
+      }
+    } catch (e) {
+      showSnackBar('서버 통신 실패: $e');
     }
+
+  }
+
+  void showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
-      body: Column(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(child: Text(errorMessage!))
+          : Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
@@ -127,110 +121,98 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
                     ),
                   ],
                 ),
-                child:
-                    isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 상단 아이콘 + 북마크 아이콘
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back_ios,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                                BookmarkIcon(
-                                  userId: 123,
-                                  targetId: categoryId, // intro 화면에서 받은 ID
-                                  type: BookmarkType.category,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              description,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xff727272),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            const Text(
-                              "이런 내용을 다뤄요!",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (keywords.isNotEmpty)
-                              Column(
-                                children:
-                                    keywords.map((k) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 6,
-                                        ),
-                                        child: SizedBox(
-                                          width: 334,
-                                          height: 52,
-                                          child: ElevatedButton(
-                                            onPressed: () {},
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(
-                                                0xffEAF2FF,
-                                              ),
-                                              foregroundColor: Colors.black,
-                                              elevation: 0,
-                                              alignment: Alignment.centerLeft,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              k,
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                              ),
-
-                            const SizedBox(height: 60), // 버튼과의 여백 확보
-                          ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 상단 아이콘 + 북마크
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios, color: Colors.grey),
+                          onPressed: () => Navigator.pop(context),
                         ),
+                        BookmarkIcon(
+                          userId: userId,
+                          targetId: categoryId!,
+                          type: BookmarkType.category,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      categoryData!['name'],
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      categoryData!['description'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xff727272),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    const Text(
+                      "이런 내용을 다뤄요!",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...List.generate(
+                      (categoryData!['keywords'] as List).length,
+                          (index) {
+                        final keyword = categoryData!['keywords'][index].toString();
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: SizedBox(
+                            width: 334,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xffEAF2FF),
+                                foregroundColor: Colors.black,
+                                elevation: 0,
+                                alignment: Alignment.centerLeft,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                keyword,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 60),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Padding(
+      bottomNavigationBar: isLoading || errorMessage != null
+          ? null
+          : Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
         child: SizedBox(
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: () async {
-              await createQuizSession();
-            },
+            onPressed: createQuizSession,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xff006FFD),
               foregroundColor: Colors.white,
