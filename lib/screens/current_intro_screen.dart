@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'quiz_session_screen.dart';
+import '../widgets/bookmark_icon.dart';
 
 class CurrentIntroScreen extends StatefulWidget {
   const CurrentIntroScreen({super.key});
@@ -11,6 +12,7 @@ class CurrentIntroScreen extends StatefulWidget {
 }
 
 class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
+  late int categoryId;
   late String name; // 카테고리 이름
   String description = '';
   List<String> keywords = [];
@@ -19,19 +21,26 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args == null || args is! String) {
-      // fallback or error handling
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    final id = args?['categoryId'] as int?;
+    final title = args?['name'] as String?;
+
+    if (id == null || title == null) {
       Navigator.pop(context);
       return;
     }
-    name = args;
+    // 전달받은 인자를 categoryId, name 필드에 저장
+    categoryId = id; // 클래스 필드에 할당
+    name = title;
+
     fetchCategoryIntro();
   }
 
   Future<void> fetchCategoryIntro() async {
     final encodedName = Uri.encodeComponent(name);
-    final url = Uri.parse('http://10.0.2.2:5000/categories/name/$encodedName'); // 실제 IP로 변경 가능
+    final url = Uri.parse(
+      'http://10.0.2.2:5000/categories/name/$encodedName',
+    ); // 실제 IP로 변경 가능
 
     try {
       final response = await http.get(url);
@@ -69,43 +78,30 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
     };
 
     final userId = 123; // TODO: 실제 유저 ID로 대체
-    final categoryId = categoryMap[name];
-
-
-    if (categoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('유효하지 않은 카테고리입니다.')),
-      );
-      return;
-    }
 
     final url = Uri.parse('http://10.0.2.2:5000/quizzes/session');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'categoryId': categoryId,
-        'userId': userId,
-      }),
+      body: json.encode({'categoryId': categoryId, 'userId': userId}),
     );
-
 
     if (response.statusCode == 201) {
       final data = json.decode(response.body);
       final sessionId = data['sessionId'];
       final quizIds = List<int>.from(data['quizIds']); // quiz_id List<int>로 받음
-      Navigator.pushNamed(context, '/quiz', arguments: {
-        'sessionId': sessionId,
-        'quizIds': quizIds,
-      });
+      Navigator.pushNamed(
+        context,
+        '/quiz',
+        arguments: {'sessionId': sessionId, 'quizIds': quizIds},
+      );
     } else {
       final error = json.decode(response.body)['error'] ?? '알 수 없는 오류';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('퀴즈 세션 생성 실패: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('퀴즈 세션 생성 실패: $error')));
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -131,82 +127,96 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
                     ),
                   ],
                 ),
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 상단 아이콘
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios, color: Colors.grey),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Icon(Icons.bookmark_border, color: Colors.grey),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xff727272),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      "이런 내용을 다뤄요!",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (keywords.isNotEmpty)
-                      Column(
-                        children: keywords.map((k) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: SizedBox(
-                              width: 334,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xffEAF2FF),
-                                  foregroundColor: Colors.black,
-                                  elevation: 0,
-                                  alignment: Alignment.centerLeft,
-                                  shape: RoundedRectangleBorder(
-                                   borderRadius: BorderRadius.circular(12),
+                child:
+                    isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 상단 아이콘 + 북마크 아이콘
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios,
+                                    color: Colors.grey,
                                   ),
+                                  onPressed: () => Navigator.pop(context),
                                 ),
-                                child: Text(
-                                k,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                BookmarkIcon(
+                                  userId: 123,
+                                  targetId: categoryId, // intro 화면에서 받은 ID
+                                  type: BookmarkType.category,
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                        );
-                     }).toList(),
-                    ),
+                            const SizedBox(height: 8),
+                            Text(
+                              description,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xff727272),
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            const Text(
+                              "이런 내용을 다뤄요!",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            if (keywords.isNotEmpty)
+                              Column(
+                                children:
+                                    keywords.map((k) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: SizedBox(
+                                          width: 334,
+                                          height: 52,
+                                          child: ElevatedButton(
+                                            onPressed: () {},
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                0xffEAF2FF,
+                                              ),
+                                              foregroundColor: Colors.black,
+                                              elevation: 0,
+                                              alignment: Alignment.centerLeft,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              k,
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
 
-                    const SizedBox(height: 60), // 버튼과의 여백 확보
-                  ],
-                ),
+                            const SizedBox(height: 60), // 버튼과의 여백 확보
+                          ],
+                        ),
               ),
             ),
           ),
@@ -241,5 +251,4 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
       ),
     );
   }
-
 }

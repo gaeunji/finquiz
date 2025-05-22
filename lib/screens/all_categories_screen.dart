@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/category_card.dart';
 import '../data/categories.dart';
 import '../models/category.dart';
+import '../widgets/bookmark_icon.dart';
 
 class AllCategoriesScreen extends StatelessWidget {
   const AllCategoriesScreen({super.key});
@@ -17,7 +18,14 @@ class AllCategoriesScreen extends StatelessWidget {
           label: cat.label,
           color: cat.color,
           onTap: () {
-            Navigator.pop(context, cat);
+            Navigator.pushNamed(
+              context,
+              '/intro',
+              arguments: {
+                'categoryId': cat.id,
+                'name': cat.label,
+              },
+            );
           },
         ))
             .toList(),
