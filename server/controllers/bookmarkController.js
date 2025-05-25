@@ -1,5 +1,26 @@
 const pool = require("../db");
 
+// 북마크 여부 확인
+exports.checkBookmark = async (req, res) => {
+  const userId = Number(req.params.userId); // 사용자 ID
+  const questionId = Number(req.params.questionId); // 질문 ID
+
+  try {
+    const result = await pool.query(
+      `SELECT EXISTS (
+         SELECT 1 FROM bookmarked_questions
+         WHERE user_id = $1 AND question_id = $2
+       ) AS is_bookmarked`,
+      [userId, questionId]
+    );
+
+    res.json({ isBookmarked: result.rows[0].is_bookmarked });
+  } catch (err) {
+    console.error("북마크 여부 확인 실패:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // 북마크 추가
 exports.addBookmark = async (req, res) => {
   const userId = Number(req.params.userId); // 사용자 ID
