@@ -16,4 +16,7 @@ app.use("/categories", categoryRoutes);
 const userCategoryRoutes = require("./routes/userCategoryRoutes");
 app.use("/users", userCategoryRoutes);
 
+const bookmarkRoutes = require("./routes/bookmarkRoutes");
+app.use("/user-bookmarks", bookmarkRoutes);
+
 module.exports = app;
