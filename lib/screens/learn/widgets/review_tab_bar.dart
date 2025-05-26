@@ -28,7 +28,7 @@ class ReviewTabBar extends StatelessWidget {
           _buildGradientTab(
             icon: LucideIcons.xCircle,
             text: "틀린 문제",
-            gradient: const LinearGradient(colors: [Colors.red, Colors.pink]),
+            gradient: const LinearGradient(colors: [Color(0xfffa4872), Color(0xffeb5967)]),
             isActive: activeIndex == 0,
           ),
           _buildGradientTab(

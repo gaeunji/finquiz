@@ -20,7 +20,7 @@ class StatDashboard extends StatelessWidget {
           trailing: Text("!", style: TextStyle(fontWeight: FontWeight.bold)),
           value: "23",
           label: "틀린 문제",
-          gradient: LinearGradient(colors: [Colors.red, Colors.pink]),
+          gradient: LinearGradient(colors: [Color(0xfffa4872), Color(0xffeb5967)]),
         ),
         _StatCard(
           icon: LucideIcons.bookmark,

@@ -49,7 +49,7 @@ class _ReviewScreenState extends State<ReviewScreen>
           // 여기에 헤더 추가?
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(30, 70, 20, 30),
+            padding: const EdgeInsets.fromLTRB(30, 92, 20, 30),
             color: const Color(0xFF005eff), // 파란 배경색
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,15 +77,17 @@ class _ReviewScreenState extends State<ReviewScreen>
               padding: const EdgeInsets.fromLTRB(26, 0, 26, 26),
               child: Column(
                 children: [
-                  const StatDashboard(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 10),
+
+                  // const StatDashboard(),
+                  // const SizedBox(height: 24),
 
                   // 탬 바
                   ReviewTabBar(
                     tabController: _tabController,
                     activeIndex: _activeIndex,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 5),
 
                   // 탭 뷰
                   Expanded(
