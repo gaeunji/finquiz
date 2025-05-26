@@ -6,7 +6,7 @@ import 'screens/all_categories_screen.dart';
 import 'screens/quiz_session_screen.dart';
 import 'screens/quiz_result_screen.dart';
 import 'screens/quiz_review_screen.dart';
-import 'screens/learn_screen.dart';
+import 'screens/learn/learn_screen.dart';
 import 'screens/profile_screen.dart';
 
 void main() {
@@ -26,7 +26,7 @@ class _MyAppState extends State<MyApp> {
   final List<Widget> _screens = [
     HomeScreen(),             // 홈
     AllCategoriesScreen(),    // 카테고리
-    LearnScreen(),            // 학습 + 북마크
+    ReviewScreen(),            // 학습 + 북마크
     ProfileScreen(),          // 마이페이지
   ];
 
