@@ -12,7 +12,7 @@ router.post("/:quizId/submit", quizController.submitAnswer);
 router.post("/questions", quizController.getQuestionsByIds);
 
 // 세션 관련
-router.post("/session", sessionController.createSessionByCategory);
+router.post("/session", sessionController.createSession);
 router.post("/session/:sessionId/complete", sessionController.completeSession);
 router.post("/submit", sessionController.submitQuizResult);
 

@@ -46,42 +46,63 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
   Future<void> _handleTap(BuildContext context) async {
     if (quiz == null) return;
 
-    final rawCategoryId = quiz!['category_id'];
-    if (rawCategoryId == null) {
-      print('[에러] category_id가 null입니다.');
+    // 퀴즈 ID 추출 및 검증
+    final rawQuestionId = quiz!['id'];
+    if (rawQuestionId == null) {
+      print('[에러] question_id가 null입니다.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('퀴즈 ID를 찾을 수 없습니다.')),
+      );
       return;
     }
 
-    final categoryId = int.tryParse(rawCategoryId.toString());
-    if (categoryId == null) {
-      print('[에러] category_id 변환 실패');
+    final questionId = int.tryParse(rawQuestionId.toString());
+    if (questionId == null) {
+      print('[에러] question_id 변환 실패: $rawQuestionId');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('잘못된 퀴즈 ID입니다.')),
+      );
       return;
     }
 
     final userId = 123;
+
+    // 카테고리 id도 추출
+    final rawCategoryId = quiz!['category_id'];
+    final categoryId = int.tryParse(rawCategoryId.toString());
 
     try {
       final response = await http.post(
         Uri.parse('http://10.0.2.2:5000/quizzes/session'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'categoryId': categoryId,
           'userId': userId,
-          'count': 1,
+          'categoryId': categoryId,
+          'quizIds': [questionId],
+          'count': 1,// 특정 퀴즈 ID 지정
         }),
       );
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
+        print('[세션 생성 성공] sessionId: ${data['sessionId']}, quizIds: ${data['quizIds']}');
+
         Navigator.pushNamed(context, '/quiz', arguments: {
           'sessionId': data['sessionId'],
           'quizIds': data['quizIds'],
+          'isDaily': true, // 일일 퀴즈임을 표시
         });
       } else {
-        print('[세션 생성 실패] ${response.body}');
+        print('[세션 생성 실패] Status: ${response.statusCode}, Body: ${response.body}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('퀴즈 세션 생성에 실패했습니다.')),
+        );
       }
     } catch (e) {
       print('[세션 생성 예외] $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('네트워크 오류: $e')),
+      );
     }
   }
 
