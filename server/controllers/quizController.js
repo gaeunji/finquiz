@@ -2,35 +2,66 @@ const pool = require("../db");
 
 exports.getDailyQuiz = async (req, res) => {
   try {
-    const query = `
-      SELECT question_id, category_id, question_text, options
+    // 오늘 날짜를 무자열로
+    const today = new Date().toISOString().split("T")[0];
+
+    const randomQuery = `
+      SELECT question_id
       FROM questions
       ORDER BY RANDOM()
       LIMIT 1;
     `;
-    const result = await pool.query(query);
 
-    if (result.rows.length === 0) {
+    // 퀴즈 중 1개 랜덤으로 선택
+    const randomResult = await pool.query(randomQuery);
+
+    if (randomResult.rows.length === 0) {
       return res.status(404).json({ message: "퀴즈가 없습니다." });
     }
 
-    const quiz = result.rows[0];
-    quiz.id = quiz.question_id;
-    quiz.question = quiz.question_text;
+    const selectedId = randomResult.rows[0].question_id;
 
-    delete quiz.question_id;
-    delete quiz.question_text;
+    // 해당 퀴즈를 오늘의 퀴즈로 설정한 쿼리
+    const updateQuery = `
+      UPDATE questions
+      SET is_daily = true, daily_date = $1
+      WHERE question_id = $2;
+    `;
+    await pool.query(updateQuery, [today, selectedId]);
 
-    quiz.options =
-      typeof quiz.options === "string"
-        ? JSON.parse(quiz.options)
-        : quiz.options;
+    // 최종 데이터를 가져오는 쿼리
+    const fetchQuery = `
+      SELECT question_id, category_id, question_text, options
+      FROM questions
+      WHERE question_id = $1;
+    `;
+    const quizResult = await pool.query(fetchQuery, [selectedId]);
 
-    res.json(quiz);
+    return res.json(formatQuiz(quizResult.rows[0]));
   } catch (err) {
     console.error("getDailyQuiz error:", err);
     res.status(500).json({ error: err.message });
   }
+};
+
+// 퀴즈 포맷팅 함수
+const formatQuiz = (quiz) => {
+  if (!quiz) return null;
+
+  const formattedQuiz = {
+    id: quiz.question_id,
+    category_id: quiz.category_id,
+    question: quiz.question_text,
+    options:
+      typeof quiz.options === "string"
+        ? JSON.parse(quiz.options)
+        : quiz.options,
+  };
+
+  delete formattedQuiz.question_id;
+  delete formattedQuiz.question_text;
+
+  return formattedQuiz;
 };
 
 // ✅ 단일 퀴즈 조회
