@@ -190,7 +190,7 @@ exports.completeSession = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE quiz_sessions SET completed = true WHERE session_id = $1`,
+      `UPDATE quiz_sessions SET is_completed = true WHERE session_id = $1`,
       [sessionId]
     );
 

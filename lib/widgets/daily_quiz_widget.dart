@@ -12,16 +12,23 @@ class DailyQuizWidget extends StatefulWidget {
 class _DailyQuizWidgetState extends State<DailyQuizWidget> {
   Map<String, dynamic>? quiz;
   bool isLoading = true;
+  bool isCompleted = false;
+  final int userId = 123;
+
 
   @override
   void initState() {
     super.initState();
     _fetchDailyQuiz();
+    _checkCompletionStatus();
   }
 
   Future<void> _fetchDailyQuiz() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:5000/quizzes/daily'));
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/quizzes/daily'),
+      );
+
       if (response.statusCode == 200) {
         setState(() {
           quiz = json.decode(response.body);
@@ -41,6 +48,23 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
     }
   }
 
+  Future<void> _checkCompletionStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/quizzes/daily/status/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          isCompleted = data['completed'] ?? false;
+        });
+      }
+    } catch (e) {
+      print('[에러] 오늘의 퀴즈 완료 상태 조회 실패: $e');
+    }
+  }
+
   // 탭 핸들러 함수
   // error: The method '[]' can't be unconditionally invoked because the receiver can be 'null'.
   Future<void> _handleTap(BuildContext context) async {
@@ -50,22 +74,21 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
     final rawQuestionId = quiz!['id'];
     if (rawQuestionId == null) {
       print('[에러] question_id가 null입니다.');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('퀴즈 ID를 찾을 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('퀴즈 ID를 찾을 수 없습니다.')));
       return;
     }
 
     final questionId = int.tryParse(rawQuestionId.toString());
     if (questionId == null) {
       print('[에러] question_id 변환 실패: $rawQuestionId');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('잘못된 퀴즈 ID입니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('잘못된 퀴즈 ID입니다.')));
       return;
     }
 
-    final userId = 123;
 
     // 카테고리 id도 추출
     final rawCategoryId = quiz!['category_id'];
@@ -79,30 +102,36 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
           'userId': userId,
           'categoryId': categoryId,
           'quizIds': [questionId],
-          'count': 1,// 특정 퀴즈 ID 지정
+          'count': 1, // 특정 퀴즈 ID 지정
         }),
       );
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
-        print('[세션 생성 성공] sessionId: ${data['sessionId']}, quizIds: ${data['quizIds']}');
 
         Navigator.pushNamed(context, '/quiz', arguments: {
           'sessionId': data['sessionId'],
           'quizIds': data['quizIds'],
-          'isDaily': true, // 일일 퀴즈임을 표시
+          'isDaily': true,
+          'onComplete': () {
+            setState(() {
+              isCompleted = true;
+            });
+          }
         });
       } else {
-        print('[세션 생성 실패] Status: ${response.statusCode}, Body: ${response.body}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('퀴즈 세션 생성에 실패했습니다.')),
+        print(
+          '[세션 생성 실패] Status: ${response.statusCode}, Body: ${response.body}',
         );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('퀴즈 세션 생성에 실패했습니다.')));
       }
     } catch (e) {
       print('[세션 생성 예외] $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('네트워크 오류: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
     }
   }
 
@@ -144,119 +173,125 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final content = isLoading
-        ? const Center(
-      child: SizedBox(
-        height: 40,
-        width: 40,
-        child: CircularProgressIndicator(strokeWidth: 3),
-      ),
-    )
-        : quiz == null
-        ? const Center(
-      child: Text(
-        '퀴즈를 불러올 수 없습니다.',
-        style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-      ),
-    )
-        : Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(6),
+    final content =
+        isLoading
+            ? const Center(
+              child: SizedBox(
+                height: 40,
+                width: 40,
+                child: CircularProgressIndicator(strokeWidth: 3),
               ),
-              // 카테고리 뱃지
+            )
+            : quiz == null
+            ? const Center(
               child: Text(
-                _getCategoryName(quiz!['category_id']),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1D4ED8),
+                '퀴즈를 불러올 수 없습니다.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              ),
+            )
+            : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      // 카테고리 뱃지
+                      child: Text(
+                        _getCategoryName(quiz!['category_id']),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1D4ED8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        _getDifficultyText(quiz!['difficulty']),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCompleted ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        isCompleted ? '완료' : '미완료',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color:
+                              isCompleted
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFDC2626),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                _getDifficultyText(quiz!['difficulty']),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF374151),
-                ),
-              ),
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: quiz!['is_completed'] == true
-                    ? const Color(0xFFF0FDF4)
-                    : const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                quiz!['is_completed'] == true ? '완료' : '미완료',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: quiz!['is_completed'] == true
-                      ? const Color(0xFF16A34A)
-                      : const Color(0xFFDC2626),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          quiz?['question'] ?? '문제를 불러오는 중...',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF111827),
-            height: 1.5,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(),
-            Row(
-              children: const [
+                const SizedBox(height: 12),
                 Text(
-                  '문제 풀기',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF2563EB),
+                  quiz?['question'] ?? '문제를 불러오는 중...',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF111827),
+                    height: 1.5,
                   ),
                 ),
-                SizedBox(width: 8),
-                Icon(
-                  Icons.chevron_right,
-                  size: 16,
-                  color: Color(0xFF2563EB),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(),
+                    Row(
+                      children: const [
+                        Text(
+                          '문제 풀기',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: Color(0xFF2563EB),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        ),
-      ],
-    );
+            );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,9 +340,10 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: isLoading || quiz == null
-                  ? null
-                  : () async => _handleTap(context),
+              onTap:
+                  isLoading || quiz == null
+                      ? null
+                      : () async => _handleTap(context),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: content,
@@ -318,5 +354,4 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
       ],
     );
   }
-
 }
