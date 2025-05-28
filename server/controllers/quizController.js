@@ -186,3 +186,45 @@ exports.getQuestionsByIds = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// 사용자가 오늘의 퀴즈를 풀었는지 확인
+exports.logDailyQuiz = async (req, res) => {
+  const { userId, questionId } = req.body;
+
+  if (!userId || !questionId) {
+    return res.status(400).json({ error: "userId와 questionId가 필요합니다." });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO daily_quiz_log (user_id, date, question_id)
+       VALUES ($1, CURRENT_DATE, $2)
+       ON CONFLICT (user_id, date) DO NOTHING`,
+      [userId, questionId]
+    );
+
+    res.status(200).json({ message: "오늘의 퀴즈 기록 완료" });
+  } catch (err) {
+    console.error("오늘의 퀴즈 기록 실패:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 완료 여부 조회
+exports.getDailyQuizStatus = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const result = await pool.query(
+      `SELECT 1 FROM daily_quiz_log
+       WHERE user_id = $1 AND date = CURRENT_DATE
+       LIMIT 1`,
+      [userId]
+    );
+
+    res.json({ completed: result.rows.length > 0 });
+  } catch (err) {
+    console.error("오늘의 퀴즈 상태 조회 실패:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
