@@ -4,6 +4,7 @@ import '../models/category.dart';
 import '../data/categories.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../widgets/daily_quiz_widget.dart';
 
 final List<int> xpData = [40, 30, 60, 20, 70, 50, 80];
 
@@ -261,8 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
 
+            ),
+            const SizedBox(height: 30),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 36),
+              child: DailyQuizWidget(),
+            ),
             const SizedBox(height: 30),
 
             // 카테고리

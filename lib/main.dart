@@ -8,6 +8,7 @@ import 'screens/quiz_result_screen.dart';
 import 'screens/quiz_review_screen.dart';
 import 'screens/learn/learn_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/categories_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +26,7 @@ class _MyAppState extends State<MyApp> {
 
   final List<Widget> _screens = [
     HomeScreen(),             // 홈
-    AllCategoriesScreen(),    // 카테고리
+    CategoriesTab(),    // 카테고리
     ReviewScreen(),            // 학습 + 북마크
     ProfileScreen(),          // 마이페이지
   ];
@@ -58,7 +59,7 @@ class _MyAppState extends State<MyApp> {
       ),
       routes: {
         '/intro': (context) => const CurrentIntroScreen(),
-        '/all-categories': (context) => const AllCategoriesScreen(),
+        '/all-categories': (context) => const CategoriesTab(),
         '/quiz': (context) => const QuizSessionScreenWrapper(),
         '/review': (context) => const QuizReviewScreenWrapper(),
         '/result': (context) {

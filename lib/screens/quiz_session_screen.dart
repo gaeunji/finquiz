@@ -6,11 +6,15 @@ import 'package:http/http.dart' as http;
 class QuizSessionScreen extends StatefulWidget {
   final int sessionId;
   final List<int> quizIds;
+  final bool isDaily;
+  final VoidCallback? onComplete;
 
   const QuizSessionScreen({
     super.key,
     required this.sessionId,
     required this.quizIds,
+    this.isDaily = false,
+    this.onComplete, // 오늘의 퀴즈 완료 상태 전환하는 콜백 함수
   });
 
   @override
@@ -67,6 +71,12 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
 
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
+
+      // 정답 제출 후 결과 페이지로 넘어가기 전에
+      // 오늘의 퀴즈일 경우 완료 처리
+      if (widget.isDaily && widget.onComplete != null) {
+        widget.onComplete!();
+      }
 
       Navigator.pushReplacementNamed(context, '/result', arguments: {
         'sessionId': widget.sessionId,
@@ -242,7 +252,6 @@ class QuizSessionScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    print('arguments: $args');
     if (args == null || args['sessionId'] == null || args['quizIds'] == null) {
       return const Scaffold(
         body: Center(child: Text('잘못된 접근입니다.')),
@@ -254,10 +263,14 @@ class QuizSessionScreenWrapper extends StatelessWidget {
         : args['sessionId'] as int;
 
     final List<int> quizIds = List<int>.from(args['quizIds']);
+    final bool isDaily = args['isDaily'] ?? false;
+    final VoidCallback? onComplete = args['onComplete'];
 
     return QuizSessionScreen(
       sessionId: sessionId,
       quizIds: quizIds,
+      isDaily: isDaily,
+      onComplete: onComplete,
     );
   }
 }

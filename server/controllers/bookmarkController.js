@@ -69,7 +69,7 @@ exports.removeBookmark = async (req, res) => {
 };
 
 // 북마크 목록 조회
-exports.getBookmarks = async (req, res) => {
+exports.getAllBookmarks = async (req, res) => {
   const userId = Number(req.params.userId);
 
   try {

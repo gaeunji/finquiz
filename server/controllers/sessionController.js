@@ -11,7 +11,7 @@ const categoryMap = {
 };
 
 // 세션 생성 (카테고리 기반)
-exports.createSessionByCategory = async (req, res) => {
+exports.createSession = async (req, res) => {
   console.log("📥 [세션 생성 요청] 클라이언트 요청 데이터:", req.body);
   // 1. 입력 유효성 검사
   if (!req.body.categoryId || !req.body.userId) {
@@ -20,46 +20,71 @@ exports.createSessionByCategory = async (req, res) => {
 
   const categoryId = Number(req.body.categoryId);
   const userId = Number(req.body.userId);
+  const count = Number(req.body.count) || 5; //   기본값 5개, 1개도 가능
 
-  if (isNaN(categoryId) || isNaN(userId)) {
-    return res
-      .status(400)
-      .json({ error: "categoryId와 userId는 숫자여야 합니다." });
+  // 특정 퀴즈 ID들이 제공된 경우
+  const specificQuizIds = req.body.quizIds;
+
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: "userId는 숫자여야 합니다." });
   }
 
   try {
-    // 2. 안 푼 문제 최대 5개 추출
-    const newQuizQuery = `
-      SELECT question_id
-      FROM questions
-      WHERE category_id = $1
-        AND question_id NOT IN (
-          SELECT question_id FROM user_question_log WHERE user_id = $2
-        )
-      ORDER BY RANDOM()
-      LIMIT 5;
-    `;
-    const newQuizResult = await pool.query(newQuizQuery, [categoryId, userId]);
-    let quizIds = newQuizResult.rows.map((row) => row.question_id);
+    let quizIds = [];
 
-    // 3. 부족할 경우 -> 중복 허용 문제로 보완
-    if (quizIds.length < 5) {
-      const remainingCount = 5 - quizIds.length;
-      const fallbackQuery = `
+    // 특정 퀴즈 ID들이 제공된 경우 (일일 퀴즈 등)
+    if (specificQuizIds && Array.isArray(specificQuizIds)) {
+      quizIds = specificQuizIds.map((id) => Number(id));
+      console.log("📌 특정 퀴즈 ID로 세션 생성:", quizIds);
+    }
+    // 카테고리별 랜덤 퀴즈 (기존 로직)
+    else if (req.body.categoryId) {
+      const categoryId = Number(req.body.categoryId);
+
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ error: "categoryId는 숫자여야 합니다." });
+      }
+
+      // 기존 랜덤 퀴즈 선택 로직...
+      const newQuizQuery = `
         SELECT question_id
         FROM questions
         WHERE category_id = $1
+          AND question_id NOT IN (
+            SELECT question_id FROM user_question_log WHERE user_id = $2
+          )
         ORDER BY RANDOM()
-        LIMIT $2;
+        LIMIT $3;
       `;
-      const fallbackResult = await pool.query(fallbackQuery, [
+      const newQuizResult = await pool.query(newQuizQuery, [
         categoryId,
-        remainingCount,
+        userId,
+        count,
       ]);
-      const fallbackIds = fallbackResult.rows.map((row) => row.question_id);
-      quizIds = quizIds.concat(fallbackIds);
-    }
+      quizIds = newQuizResult.rows.map((row) => row.question_id);
 
+      // 부족할 경우 보완 로직...
+      if (quizIds.length < count) {
+        const remainingCount = count - quizIds.length;
+        const fallbackQuery = `
+          SELECT question_id
+          FROM questions
+          WHERE category_id = $1
+          ORDER BY RANDOM()
+          LIMIT $2;
+        `;
+        const fallbackResult = await pool.query(fallbackQuery, [
+          categoryId,
+          remainingCount,
+        ]);
+        const fallbackIds = fallbackResult.rows.map((row) => row.question_id);
+        quizIds = quizIds.concat(fallbackIds);
+      }
+    } else {
+      return res.status(400).json({
+        error: "categoryId 또는 quizIds 중 하나는 필수입니다.",
+      });
+    }
     // 배열이 비어있으면 예외 처리
     if (quizIds.length === 0) {
       return res
@@ -69,8 +94,9 @@ exports.createSessionByCategory = async (req, res) => {
 
     // 중복 제거
     quizIds = [...new Set(quizIds)];
+    // 요청된 개수보다 적으면 예외 처리
 
-    // 5. 세션 저장
+    // 세션 저장
     const insertSession = `
       INSERT INTO quiz_sessions (quiz_ids, user_id)
       VALUES ($1, $2)
@@ -82,13 +108,20 @@ exports.createSessionByCategory = async (req, res) => {
     console.log("📤 [세션 생성 응답] sessionId:", sessionId);
     console.log("📤 [세션 생성 응답] quizIds:", quizIds);
 
-    res.status(201).json({ sessionId, quizIds });
+    res.status(201).json({
+      sessionId,
+      quizIds,
+      actualCount: quizIds.length,
+    });
   } catch (err) {
     console.error("세션 생성 실패:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
+exports.createSessionByCategory = exports.createSession;
+
+// 세션 완료 (사용자가 푼 문제 제출)
 exports.completeSession = async (req, res) => {
   const sessionId = req.params.sessionId;
   const { answers } = req.body;
@@ -157,7 +190,7 @@ exports.completeSession = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE quiz_sessions SET completed = true WHERE session_id = $1`,
+      `UPDATE quiz_sessions SET is_completed = true WHERE session_id = $1`,
       [sessionId]
     );
 
