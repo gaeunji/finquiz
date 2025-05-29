@@ -12,21 +12,20 @@ class DailyQuizWidget extends StatefulWidget {
 class _DailyQuizWidgetState extends State<DailyQuizWidget> {
   Map<String, dynamic>? quiz;
   bool isLoading = true;
-  bool isCompleted = false;
   final int userId = 123;
-
 
   @override
   void initState() {
     super.initState();
     _fetchDailyQuiz();
-    _checkCompletionStatus();
+    // _checkCompletionStatus();
   }
 
   Future<void> _fetchDailyQuiz() async {
     try {
+      // userId를 쿼리 파라미터로 포함하여 완료 상태도 함께 조회
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:5000/quizzes/daily'),
+        Uri.parse('http://10.0.2.2:5000/quizzes/daily?userId=$userId'),
       );
 
       if (response.statusCode == 200) {
@@ -38,30 +37,44 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
         setState(() {
           isLoading = false;
         });
-        print('[에러] 퀴즈 응답 실패: ${response.body}');
+        print('퀴즈 응답 실패: ${response.body}');
       }
     } catch (e) {
-      print('[에러] 퀴즈 요청 실패: $e');
+      print('퀴즈 요청 실패: $e');
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  Future<void> _checkCompletionStatus() async {
+  // 퀴즈 완료 후 상태 업데이트를 위한 메서드
+  void _updateCompletionStatus(bool completed) {
+    setState(() {
+      if (quiz != null) {
+        quiz!['is_completed'] = completed;
+      }
+    });
+    print('🔄 완료 상태 업데이트: $completed');
+  }
+
+  // 퀴즈 완료 상태를 서버에서 다시 확인하는 메서드
+  Future<void> _refreshCompletionStatus() async {
+    if (quiz == null) return;
+
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:5000/quizzes/daily/status/$userId'),
+        Uri.parse('http://10.0.2.2:5000/quizzes/daily?userId=$userId'),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final responseData = json.decode(response.body);
         setState(() {
-          isCompleted = data['completed'] ?? false;
+          quiz!['is_completed'] = responseData['is_completed'] ?? false;
         });
+        print('서버에서 완료 상태 새로고침: ${quiz!['is_completed']}');
       }
     } catch (e) {
-      print('[에러] 오늘의 퀴즈 완료 상태 조회 실패: $e');
+      print('완료 상태 새로고침 실패: $e');
     }
   }
 
@@ -70,29 +83,8 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
   Future<void> _handleTap(BuildContext context) async {
     if (quiz == null) return;
 
-    // 퀴즈 ID 추출 및 검증
-    final rawQuestionId = quiz!['id'];
-    if (rawQuestionId == null) {
-      print('[에러] question_id가 null입니다.');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('퀴즈 ID를 찾을 수 없습니다.')));
-      return;
-    }
-
-    final questionId = int.tryParse(rawQuestionId.toString());
-    if (questionId == null) {
-      print('[에러] question_id 변환 실패: $rawQuestionId');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('잘못된 퀴즈 ID입니다.')));
-      return;
-    }
-
-
-    // 카테고리 id도 추출
-    final rawCategoryId = quiz!['category_id'];
-    final categoryId = int.tryParse(rawCategoryId.toString());
+    final questionId = quiz!['id'];
+    final categoryId = quiz!['category_id'];
 
     try {
       final response = await http.post(
@@ -102,23 +94,31 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
           'userId': userId,
           'categoryId': categoryId,
           'quizIds': [questionId],
-          'count': 1, // 특정 퀴즈 ID 지정
+          'count': 1,
         }),
       );
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
 
-        Navigator.pushNamed(context, '/quiz', arguments: {
-          'sessionId': data['sessionId'],
-          'quizIds': data['quizIds'],
-          'isDaily': true,
-          'onComplete': () {
-            setState(() {
-              isCompleted = true;
-            });
-          }
-        });
+        // 퀴즈 완료 후 콜백으로 상태 업데이트
+        final result = await Navigator.pushNamed(
+          context,
+          '/quiz',
+          arguments: {
+            'sessionId': data['sessionId'],
+            'quizIds': data['quizIds'],
+            'isDaily': true,
+          },
+        );
+
+        // 퀴즈 화면에서 돌아온 후 항상 완료 상태를 서버에서 새로고침
+        await _refreshCompletionStatus();
+
+        // 추가적으로 결과가 명시적으로 true인 경우에도 업데이트
+        if (result == true || result == 'completed') {
+          _updateCompletionStatus(true);
+        }
       } else {
         print(
           '[세션 생성 실패] Status: ${response.statusCode}, Body: ${response.body}',
@@ -133,6 +133,11 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
         context,
       ).showSnackBar(SnackBar(content: Text('네트워크 오류: $e')));
     }
+  }
+
+  // 완료 상태를 가져오는 헬퍼 함수
+  bool get isCompleted {
+    return quiz?['is_completed'] == true;
   }
 
   // 카테고리 이름 매핑 함수
@@ -238,7 +243,10 @@ class _DailyQuizWidgetState extends State<DailyQuizWidget> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: isCompleted ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+                        color:
+                            isCompleted
+                                ? const Color(0xFFF0FDF4)
+                                : const Color(0xFFFEF2F2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(

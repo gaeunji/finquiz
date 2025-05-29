@@ -4,40 +4,84 @@ exports.getDailyQuiz = async (req, res) => {
   try {
     // 오늘 날짜를 무자열로
     const today = new Date().toISOString().split("T")[0];
+    const userId = req.query.userId;
 
-    const randomQuery = `
+    // 오늘 날짜에 대한 퀴즈가 이미 정해졌는지 확인
+    const check = await pool.query(
+      `SELECT q.question_id, q.category_id, q.question_text, q.options
+       FROM daily_quiz d
+       JOIN questions q ON d.question_id = q.question_id
+       WHERE d.date = $1`,
+      [today]
+    );
+
+    if (check.rows.length > 0) {
+      const quiz = check.rows[0];
+      quiz.id = quiz.question_id;
+      quiz.question = quiz.question_text;
+      delete quiz.question_id;
+      delete quiz.question_text;
+      quiz.options =
+        typeof quiz.options === "string"
+          ? JSON.parse(quiz.options)
+          : quiz.options;
+
+      // 사용자별 완료 상태 확인
+      if (userId) {
+        const completionCheck = await pool.query(
+          `SELECT * FROM user_question_log 
+           WHERE user_id = $1 AND question_id = $2`,
+          [Number(userId), quiz.id]
+        );
+        quiz.is_completed = completionCheck.rows.length > 0;
+      } else {
+        quiz.is_completed = false;
+      }
+
+      return res.json(quiz);
+    }
+
+    // 없으면 새로운 퀴즈를 1개 랜덤으로 선택
+    const newQuizResult = await pool.query(`
       SELECT question_id
       FROM questions
       ORDER BY RANDOM()
-      LIMIT 1;
-    `;
-
-    // 퀴즈 중 1개 랜덤으로 선택
-    const randomResult = await pool.query(randomQuery);
-
-    if (randomResult.rows.length === 0) {
+      LIMIT 1
+    `);
+    if (newQuizResult.rows.length === 0) {
       return res.status(404).json({ message: "퀴즈가 없습니다." });
     }
 
-    const selectedId = randomResult.rows[0].question_id;
+    const selectedId = newQuizResult.rows[0].question_id;
 
     // 해당 퀴즈를 오늘의 퀴즈로 설정한 쿼리
-    const updateQuery = `
-      UPDATE questions
-      SET is_daily = true, daily_date = $1
-      WHERE question_id = $2;
-    `;
-    await pool.query(updateQuery, [today, selectedId]);
+    await pool.query(
+      `INSERT INTO daily_quiz (date, question_id) VALUES ($1, $2)`,
+      [today, selectedId]
+    );
 
-    // 최종 데이터를 가져오는 쿼리
-    const fetchQuery = `
-      SELECT question_id, category_id, question_text, options
-      FROM questions
-      WHERE question_id = $1;
-    `;
-    const quizResult = await pool.query(fetchQuery, [selectedId]);
+    // 다시 조회해서 반환
+    const final = await pool.query(
+      `SELECT q.question_id, q.category_id, q.question_text, q.options
+       FROM questions q
+       WHERE q.question_id = $1`,
+      [selectedId]
+    );
 
-    return res.json(formatQuiz(quizResult.rows[0]));
+    const quiz = final.rows[0];
+    quiz.id = quiz.question_id;
+    quiz.question = quiz.question_text;
+    delete quiz.question_id;
+    delete quiz.question_text;
+    quiz.options =
+      typeof quiz.options === "string"
+        ? JSON.parse(quiz.options)
+        : quiz.options;
+
+    // 새 퀴즈는 항상 미완료 상태여야 함
+    quiz.is_completed = false;
+
+    res.json(quiz);
   } catch (err) {
     console.error("getDailyQuiz error:", err);
     res.status(500).json({ error: err.message });
