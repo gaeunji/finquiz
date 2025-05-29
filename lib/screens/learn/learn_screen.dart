@@ -4,6 +4,7 @@ import 'widgets/stat_dashboard.dart';
 import 'widgets/review_tab_bar.dart';
 import 'tabs/wrong_quiz_tab.dart';
 import 'tabs/bookmarks_tab.dart';
+import '/services/bookmark_service.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -17,6 +18,8 @@ class _ReviewScreenState extends State<ReviewScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   int _activeIndex = 0;
+  final int userId = 123;
+
   @override
   void initState() {
     super.initState();
@@ -93,9 +96,9 @@ class _ReviewScreenState extends State<ReviewScreen>
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
-                      children: const [
+                      children: [
                         WrongQuizTab(),
-                        BookmarksTab(),
+                        BookmarksTab(userId: userId),
                         Center(
                           child: Text("업데이트 예정"),
                         ), // // 추후 WeakAreasTab()로 구현하기
