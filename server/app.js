@@ -19,4 +19,7 @@ app.use("/user-categories", userCategoryRoutes);
 const bookmarkRoutes = require("./routes/bookmarkRoutes");
 app.use("/user-bookmarks", bookmarkRoutes);
 
+const wrongQuestionRoutes = require("./routes/wrongQuestionRoutes");
+app.use("/wrong-questions", wrongQuestionRoutes);
+
 module.exports = app;
