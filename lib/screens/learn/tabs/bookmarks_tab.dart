@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../services/bookmark_service.dart';
 
-class BookmarksTab extends StatelessWidget {
-  const BookmarksTab({super.key});
+
+class BookmarksTab extends StatefulWidget {
+  final int userId;
+
+  const BookmarksTab({super.key, required this.userId});
+
+  @override
+  State<BookmarksTab> createState() => _BookmarksTabState();
+}
+
+class _BookmarksTabState extends State<BookmarksTab> {
+  late Future<List<dynamic>> _bookmarksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookmarksFuture = BookmarkService.getAllBookmarks(widget.userId);
+  }
 
   Color _getDifficultyColor(String level) {
     switch (level) {
@@ -17,36 +34,44 @@ class BookmarksTab extends StatelessWidget {
     }
   }
 
+  String getCategoryLabel(int id) {
+    const categories = {
+      1: '거시경제학',
+      2: '국제경제·무역',
+      3: '금융·투자',
+      4: '기초 경제 개념',
+      5: '미시경제학',
+      6: '시사 상식',
+      7: '행동경제학',
+    };
+    return categories[id] ?? '경제학';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> bookmarkedQuestions = [
-      {
-        'id': 4,
-        'question': '기회비용의 개념을 설명하세요',
-        'category': '미시경제학',
-        'difficulty': '초급',
-        'bookmarkedDate': '1주 전',
-        'note': '선택의 트레이드오프 이해에 중요',
-      },
-      {
-        'id': 5,
-        'question': '양적완화는 어떻게 작동하나요?',
-        'category': '거시경제학',
-        'difficulty': '고급',
-        'bookmarkedDate': '3일 전',
-        'note': '복잡한 통화정책 도구',
-      },
-    ];
+    return FutureBuilder<List<dynamic>>(
+      future: _bookmarksFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('오류 발생: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('북마크된 문제가 없습니다.'));
+        }
 
-    return ListView(
-      padding: const EdgeInsets.all(4),
-      children: [
-        _buildSearchBar(),
-        const SizedBox(height: 16),
-        _buildStudySessionCard(),
-        const SizedBox(height: 28),
-        ...bookmarkedQuestions.map((q) => _buildBookmarkCard(q)).toList(),
-      ],
+        final bookmarkedQuestions = snapshot.data!;
+        return ListView(
+          padding: const EdgeInsets.all(4),
+          children: [
+            _buildSearchBar(),
+            const SizedBox(height: 16),
+            _buildStudySessionCard(),
+            const SizedBox(height: 28),
+            ...bookmarkedQuestions.map((q) => _buildBookmarkCard(q)).toList(),
+          ],
+        );
+      },
     );
   }
 
@@ -141,7 +166,7 @@ class BookmarksTab extends StatelessWidget {
               ],
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {}, // // 북마크 기반 세션 생성 로직 구현 예정
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.blue,
@@ -156,11 +181,16 @@ class BookmarksTab extends StatelessWidget {
 
   // 문제별 카드
   Widget _buildBookmarkCard(Map<String, dynamic> question) {
+    final String questionText = question['question'] ?? '문제 없음';
+    final String bookmarkedDate = (question['bookmarkedAt']?.toString().split('T').first) ?? '날짜 없음';
+    final int categoryId = question['categoryId'] ?? 0;
+    final String categoryLabel = getCategoryLabel(categoryId);
+
     return InkWell(
-      onTap: () {},
+      onTap: () {}, // 퀴즈 상세 보기 구현 예정
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 16, 18),
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -194,7 +224,7 @@ class BookmarksTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        question['category'],
+                        categoryLabel,
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black87,
@@ -203,24 +233,24 @@ class BookmarksTab extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getDifficultyColor(question['difficulty']),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        question['difficulty'],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //     horizontal: 10,
+                    //     vertical: 4,
+                    //   ),
+                    //   decoration: BoxDecoration(
+                    //     color: _getDifficultyColor(question['difficulty']),
+                    //     borderRadius: BorderRadius.circular(20),
+                    //   ),
+                    //   child: Text(
+                    //     question['difficulty'],
+                    //     style: const TextStyle(
+                    //       fontSize: 12,
+                    //       color: Colors.white,
+                    //       fontWeight: FontWeight.w500,
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
                 const Icon(LucideIcons.chevronRight, color: Colors.grey),
@@ -231,7 +261,7 @@ class BookmarksTab extends StatelessWidget {
 
             // 질문 텍스트
             Text(
-              question['question'],
+              questionText,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -248,7 +278,7 @@ class BookmarksTab extends StatelessWidget {
                 const Icon(LucideIcons.tag, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  '북마크: ${question['bookmarkedDate']}',
+                  '북마크: $bookmarkedDate',
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
