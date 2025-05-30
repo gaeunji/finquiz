@@ -3,48 +3,59 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 class ReviewTabBar extends StatelessWidget {
   final TabController tabController;
-  final int activeIndex; // setState()로 관리
+  // final int activeIndex; // setState()로 관리
 
   const ReviewTabBar({
     super.key,
     required this.tabController,
-    required this.activeIndex,
+    // required this.activeIndex,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(6),
-      child: TabBar(
-        controller: tabController,
-        indicator: const BoxDecoration(), // 인디케이터 제거 (배경 스타일로 대체)
-        overlayColor: MaterialStateProperty.all(Colors.transparent),
-        labelPadding: EdgeInsets.zero,
-        tabs: [
-          _buildGradientTab(
-            icon: LucideIcons.xCircle,
-            text: "틀린 문제",
-            gradient: const LinearGradient(colors: [Color(0xfffa4872), Color(0xffeb5967)]),
-            isActive: activeIndex == 0,
+    return AnimatedBuilder(
+      animation: tabController,
+      builder: (context, _) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
           ),
-          _buildGradientTab(
-            icon: LucideIcons.bookmark,
-            text: "북마크",
-            gradient: const LinearGradient(colors: [Colors.blue, Colors.cyan]),
-            isActive: activeIndex == 1,
+          padding: const EdgeInsets.all(6),
+          child: TabBar(
+            controller: tabController,
+            indicatorColor: Colors.transparent,
+            overlayColor: MaterialStateProperty.all(Colors.transparent),
+            labelPadding: EdgeInsets.zero,
+            tabs: [
+              Tab(
+                child: _buildGradientTab(
+                  icon: LucideIcons.xCircle,
+                  text: "틀린 문제",
+                  gradient: const LinearGradient(colors: [Color(0xfffa4872), Color(0xffeb5967)]),
+                  isActive: tabController.index == 0,
+                ),
+              ),
+              Tab(
+                child: _buildGradientTab(
+                  icon: LucideIcons.bookmark,
+                  text: "북마크",
+                  gradient: const LinearGradient(colors: [Colors.blue, Colors.cyan]),
+                  isActive: tabController.index == 1,
+                ),
+              ),
+              Tab(
+                child: _buildGradientTab(
+                  icon: LucideIcons.brain,
+                  text: "약점 영역",
+                  gradient: const LinearGradient(colors: [Colors.orange, Colors.red]),
+                  isActive: tabController.index == 2,
+                ),
+              ),
+            ],
           ),
-          _buildGradientTab(
-            icon: LucideIcons.brain,
-            text: "약점 영역",
-            gradient: const LinearGradient(colors: [Colors.orange, Colors.red]),
-            isActive: activeIndex == 2,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -1,67 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../../services/wrong_question_service.dart';
 
-class WrongQuizTab extends StatelessWidget {
-  const WrongQuizTab({super.key});
+class WrongQuizTab extends StatefulWidget {
+  final int userId;
+  const WrongQuizTab({super.key, required this.userId});
+
+  @override
+  State<WrongQuizTab> createState() => _WrongQuizTabState();
+}
+
+class _WrongQuizTabState extends State<WrongQuizTab> {
+  late Future<List<Map<String, dynamic>>> _wrongQuestions;
+  final WrongQuestionService _service = WrongQuestionService();
+
+  @override
+  void initState() {
+    super.initState();
+    _wrongQuestions = _service.fetchWrongQuestions(widget.userId);
+  }
 
   // 난이도에 따라 뱃지 색상 조절하눈 함수
-  Color _getDifficultyColor(String level) {
+  Color _getDifficultyColor(String? level) {
     switch (level) {
-      case '고급':
+      case 'hard':
         return Colors.red;
-      case '중급':
+      case 'medium':
         return Colors.orange;
-      case '초급':
+      case 'easy':
         return Colors.blue;
       default:
         return Colors.grey;
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> incorrectQuestions = [
-      {
-        'id': 1,
-        'question': '통화정책의 주요 수단은 무엇인가요?',
-        'category': '거시경제학',
-        'difficulty': '중급',
-        'attempts': 3,
-        'lastAttempt': '2일 전',
-        'correctAnswer': '기준금리',
-        'userAnswer': '정부지출',
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _wrongQuestions,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('에러 발생: ${snapshot.error}'));
+        }
+
+        final incorrectQuestions = snapshot.data!;
+        return ListView(
+          padding: const EdgeInsets.all(4),
+          children: [
+            _buildSearchBar(),
+            const SizedBox(height: 16),
+            _buildQuickReviewCard(),
+            const SizedBox(height: 2),
+            ListView.builder(
+              itemCount: incorrectQuestions.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                return _buildIncorrectQuestionCard(incorrectQuestions[index]);
+              },
+            ),
+          ],
+        );
       },
-      {
-        'id': 2,
-        'question': '진입장벽이 가장 높은 시장구조는?',
-        'category': '미시경제학',
-        'difficulty': '고급',
-        'attempts': 2,
-        'lastAttempt': '1주 전',
-        'correctAnswer': '독점',
-        'userAnswer': '과점',
-      },
-    ];
-
-
-
-    return ListView(
-      padding: const EdgeInsets.all(4),
-      children: [
-        _buildSearchBar(),
-        const SizedBox(height: 16),
-        _buildQuickReviewCard(),
-        const SizedBox(height: 2),
-        ListView.builder(
-          itemCount: incorrectQuestions.length,
-          shrinkWrap: true, //
-          physics: const NeverScrollableScrollPhysics(), //  중첩 스크롤 방지
-          itemBuilder: (context, index) {
-            return _buildIncorrectQuestionCard(incorrectQuestions[index]);
-          },
-        ),
-      ],
     );
   }
 
@@ -76,7 +81,11 @@ class WrongQuizTab extends StatelessWidget {
               hintText: '틀린 문제 검색...',
               filled: true,
               fillColor: Colors.white,
-              prefixIcon: const Icon(Icons.search, size: 20, color: Colors.grey),
+              prefixIcon: const Icon(
+                Icons.search,
+                size: 20,
+                color: Colors.grey,
+              ),
               contentPadding: const EdgeInsets.symmetric(
                 vertical: 15,
                 horizontal: 40,
@@ -182,7 +191,7 @@ class WrongQuizTab extends StatelessWidget {
               color: Colors.black12,
               blurRadius: 8,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -197,13 +206,18 @@ class WrongQuizTab extends StatelessWidget {
                   children: [
                     // 카테고리 뱃지 (왼쪽)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300), // ✅ border 추가
+                        border: Border.all(
+                          color: Colors.grey.shade300,
+                        ), // border 추가
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        question['category'],
+                        question['category'] ?? '카테고리', // + null 값 처리
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black87,
@@ -216,13 +230,16 @@ class WrongQuizTab extends StatelessWidget {
 
                     // 난이도 뱃지 (오른쪽)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: _getDifficultyColor(question['difficulty']),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        question['difficulty'],
+                        question['difficulty'] ?? '난이도',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white,
@@ -277,7 +294,7 @@ class WrongQuizTab extends StatelessWidget {
                         TextSpan(
                           text: question['userAnswer'],
                           style: const TextStyle(color: Colors.red),
-                        )
+                        ),
                       ],
                     ),
                     style: const TextStyle(fontSize: 13),
@@ -305,7 +322,7 @@ class WrongQuizTab extends StatelessWidget {
                         TextSpan(
                           text: question['correctAnswer'],
                           style: const TextStyle(color: Colors.green),
-                        )
+                        ),
                       ],
                     ),
                     style: const TextStyle(fontSize: 13),
@@ -325,30 +342,32 @@ class WrongQuizTab extends StatelessWidget {
                     const Icon(LucideIcons.clock, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      question['lastAttempt'],
+                      question['lastAttempt'] ?? '1일 전', // 아직 구현 안 됨
                       style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.shade100,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    '${question['attempts']}회 틀림',
+                    '${question['attempts'] ?? 1}회 틀림',// 아직 구현 안 됨
                     style: const TextStyle(fontSize: 11, color: Colors.red),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildBadge(String text, Color bgColor, Color textColor) {
     return Container(
