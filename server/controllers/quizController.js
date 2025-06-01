@@ -183,9 +183,10 @@ exports.submitAnswer = async (req, res) => {
 exports.getTrendingQuizzes = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT question_id, category_id, question_text, options
-      FROM questions
-      WHERE is_trending = true
+      SELECT q.question_id, q.category_id, q.question_text, q.options, t.hint_url
+      FROM trending_quizzes t
+      JOIN questions q ON t.question_id = q.question_id
+      WHERE t.added_at >= NOW() - INTERVAL '14 days'
       ORDER BY RANDOM()
       LIMIT 10;
     `);
