@@ -6,7 +6,8 @@ import '../../../services/wrong_question_service.dart';
 
 class WrongQuizTab extends StatefulWidget {
   final int userId;
-  const WrongQuizTab({super.key, required this.userId});
+  final String searchQuery;
+  const WrongQuizTab({super.key, required this.userId, this.searchQuery = ''});
 
   @override
   State<WrongQuizTab> createState() => _WrongQuizTabState();
@@ -16,10 +17,26 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
   late Future<List<Map<String, dynamic>>> _wrongQuestions;
   final WrongQuestionService _service = WrongQuestionService();
 
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _allQuestions = [];
+  List<Map<String, dynamic>> _filteredQuestions = [];
+
   @override
   void initState() {
     super.initState();
-    _wrongQuestions = _service.fetchWrongQuestions(widget.userId);
+    _wrongQuestions = _service.fetchWrongQuestions(widget.userId).then((list) {
+      _allQuestions = list;
+      _filteredQuestions = List.from(list);
+      return list;
+    });
+  }
+
+  @override
+  void didUpdateWidget(WrongQuizTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      _filterQuestions(widget.searchQuery);
+    }
   }
 
   // 난이도에 따라 뱃지 색상 조절하눈 함수
@@ -36,6 +53,29 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
     }
   }
 
+  void _filterQuestions(String keyword) {
+    final query = keyword.trim();
+    final queryLower = query.toLowerCase();
+    setState(() {
+      _filteredQuestions =
+          _allQuestions.where((q) {
+            final questionText = q['question'].toString();
+            final questionTextLower = questionText.toLowerCase();
+            final category = q['category']?.toString() ?? '';
+            final categoryLower = category.toLowerCase();
+            final difficulty = q['difficulty']?.toString() ?? '';
+            final difficultyLower = difficulty.toLowerCase();
+
+            return questionText.contains(query) ||
+                questionTextLower.contains(queryLower) ||
+                category.contains(query) ||
+                categoryLower.contains(queryLower) ||
+                difficulty.contains(query) ||
+                difficultyLower.contains(queryLower);
+          }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -48,7 +88,7 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
           return Center(child: Text('에러 발생: ${snapshot.error}'));
         }
 
-        final incorrectQuestions = snapshot.data!;
+        // final incorrectQuestions = snapshot.data!;
         return ListView(
           padding: const EdgeInsets.all(4),
           children: [
@@ -57,11 +97,12 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
             _buildQuickReviewCard(),
             const SizedBox(height: 2),
             ListView.builder(
-              itemCount: incorrectQuestions.length,
+              itemCount: _filteredQuestions.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
-                return _buildIncorrectQuestionCard(incorrectQuestions[index]);
+                final question = _filteredQuestions[index];
+                return _buildIncorrectQuestionCard(question);
               },
             ),
           ],
@@ -357,7 +398,7 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    '${question['attempts'] ?? 1}회 틀림',// 아직 구현 안 됨
+                    '${question['attempts'] ?? 1}회 틀림', // 아직 구현 안 됨
                     style: const TextStyle(fontSize: 11, color: Colors.red),
                   ),
                 ),
