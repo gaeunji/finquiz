@@ -183,20 +183,28 @@ exports.submitAnswer = async (req, res) => {
 exports.getTrendingQuizzes = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT q.question_id, q.category_id, q.question_text, q.options, t.hint_url
+      SELECT q.question_id, q.question_text, q.options, q.category_id,
+             t.news_title, t.news_image, t.difficulty, t.participants,
+             t.trending_rank, t.hint_url
       FROM trending_quizzes t
-      JOIN questions q ON t.question_id = q.question_id
+      JOIN questions q ON q.question_id = t.question_id
       WHERE t.added_at >= NOW() - INTERVAL '14 days'
-      ORDER BY RANDOM()
+      ORDER BY t.trending_rank ASC
       LIMIT 10;
     `);
 
     const quizzes = result.rows.map((q) => ({
       id: q.question_id,
-      category_id: q.category_id,
       question: q.question_text,
       options:
         typeof q.options === "string" ? JSON.parse(q.options) : q.options,
+      categoryId: q.category_id,
+      newsTitle: q.news_title,
+      newsImage: q.news_image,
+      difficulty: q.difficulty,
+      participants: q.participants,
+      trendingRank: q.trending_rank,
+      hintUrl: q.hint_url,
     }));
 
     res.json(quizzes);

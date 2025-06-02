@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../models/trending_quiz.dart';
 import '../widgets/trending_quiz_card.dart';
+import '../services/quiz_service.dart';
+import '../config/env.dart';
 
 Color _difficultyColor(String difficulty) {
   switch (difficulty) {
@@ -25,23 +27,20 @@ class TrendingQuizListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      appBar: AppBar(
-        title: const Text('트렌딩 퀴즈'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: ListView.builder(
+      appBar: AppBar(title: const Text("트렌딩 퀴즈 전체보기"), leading: BackButton()),
+      body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: quizzes.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
+          final quiz = quizzes[index];
           return TrendingQuizCard(
-            quiz: quizzes[index],
+            quiz: quiz,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => TrendingQuizDetail(quiz: quizzes[index]),
+                  builder: (_) => TrendingQuizDetail(quiz: quiz),
                 ),
               );
             },
@@ -115,6 +114,24 @@ class TrendingQuizDetail extends StatelessWidget {
                         height: 180,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback 1: 키워드 기반 Unsplash
+                          return Image.network(
+                            'https://source.unsplash.com/400x200/?economy',
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback 2: 로컬 이미지
+                              return Image.asset(
+                                'assets/images/news_image1.jpg',
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -141,7 +158,7 @@ class TrendingQuizDetail extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '트렌딩 #${quiz.trendingRank}',
+                          '트렌딩 #${quiz.trendingRank ?? 0}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -188,24 +205,6 @@ class TrendingQuizDetail extends StatelessWidget {
                         ),
                         child: Text(
                           quiz.difficulty,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          quiz.category,
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
