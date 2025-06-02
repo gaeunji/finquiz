@@ -200,6 +200,10 @@ exports.completeSession = async (req, res) => {
       xpEarned,
       userId,
     ]);
+    await pool.query(`INSERT INTO user_xp_log (user_id, xp) VALUES ($1, $2)`, [
+      userId,
+      xpEarned,
+    ]);
 
     // 응답 반환
     res.status(200).json({
