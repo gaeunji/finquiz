@@ -20,57 +20,31 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<dynamic>> _userCategories;
-  final List<TrendingQuiz> trendingQuizzes = [
-    TrendingQuiz(
-      id: 1,
-      question: "2025년 한국 경제성장률이 하락할 것으로 전망되는 주요 원인으로 가장 옳은 것은?",
-      difficulty: "중급",
-      participants: 1520,
-      trendingRank: 1,
-      category: "거시경제",
-      newsTitle: "내수 부진·수출 둔화에 2025년 성장률 하락 전망",
-      newsImage:
-          "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop",
-      newsUrl: "https://www.yna.co.kr/view/AKR20250514053600002",
-      options: [
-        "내수와 수출 모두 급격히 증가",
-        "내수 부진과 수출 증가세 둔화",
-        "정부의 대규모 재정지출",
-        "기업 투자 확대와 고용 증가",
-      ],
-    ),
-    TrendingQuiz(
-      id: 2,
-      question: "트럼프 대통령의 철강 관세 50% 인상이 세계 경제에 미친 영향으로 가장 옳은 것은?",
-      difficulty: "초급",
-      participants: 2340,
-      trendingRank: 2,
-      category: "국제경제",
-      newsTitle: "미국 철강 관세 인상, 글로벌 무역 불확실성 확대",
-      newsImage:
-          "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=400&h=200&fit=crop",
-      newsUrl: "https://www.yna.co.kr/view/AKR20250514053600002",
-      options: [
-        "글로벌 무역이 더욱 자유로워짐",
-        "글로벌 무역 불확실성 확대",
-        "모든 국가의 성장률이 동반 상승",
-        "원자재 가격이 안정적으로 유지",
-      ],
-    ),
-    TrendingQuiz(
-      id: 3,
-      question: "2025년 한국 민간 소비 증가에 긍정적으로 작용한 요인으로 가장 옳은 것은?",
-      difficulty: "중급",
-      participants: 980,
-      trendingRank: 3,
-      category: "금융·투자",
-      newsTitle: "금리 인하·정국 불안 완화로 민간 소비 증가 전망",
-      newsImage:
-          "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop",
-      newsUrl: "https://www.yna.co.kr/view/AKR20250514053600002",
-      options: ["금리 인상", "금리 인하와 정국 불안 완화", "수출 둔화", "가계부채 급증"],
-    ),
-  ];
+
+  // 트렌딩 퀴즈 불러오기
+  Future<List<TrendingQuiz>> fetchTrendingQuizzes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/quizzes/trending'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        debugPrint('Server response: $data');
+        return data.map((q) {
+          debugPrint('Processing quiz: $q');
+          return TrendingQuiz.fromJson(q);
+        }).toList();
+      } else {
+        debugPrint('Server error: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
+        throw Exception('트렌딩 퀴즈 불러오기 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching trending quizzes: $e');
+      throw Exception('트렌딩 퀴즈 불러오기 실패: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -425,7 +399,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      final trendingQuizzes = await fetchTrendingQuizzes();
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -451,33 +426,48 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 2),
             // 트렌딩 퀴즈 개별 카드
-            SizedBox(
-              height: 200, // 스크롤 뷰 높이
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                scrollDirection: Axis.horizontal,
-                itemCount: trendingQuizzes.length,
-                itemBuilder: (context, index) {
-                  return SizedBox(
-                    width: 180, // 카드 너비
-                    child: TrendingQuizCard(
-                      quiz: trendingQuizzes[index],
-                      isHorizontal: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => TrendingQuizDetail(
-                                  quiz: trendingQuizzes[index],
-                                ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+            FutureBuilder<List<TrendingQuiz>>(
+              future: fetchTrendingQuizzes(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Text('오류: ${snapshot.error}');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('트렌딩 퀴즈가 없습니다.');
+                }
+
+                final trendingQuizzes = snapshot.data!.take(3).toList();
+
+                return SizedBox(
+                  height: 200,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 30),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: trendingQuizzes.length,
+                    itemBuilder: (context, index) {
+                      return SizedBox(
+                        width: 180,
+                        child: TrendingQuizCard(
+                          quiz: trendingQuizzes[index],
+                          isHorizontal: true,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => TrendingQuizDetail(
+                                      quiz: trendingQuizzes[index],
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 36),
