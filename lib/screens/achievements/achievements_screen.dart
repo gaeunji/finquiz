@@ -9,129 +9,235 @@ class AchievementsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: 실제 데이터로 교체
     final achievements = [
       Achievement(
         id: 1,
-        title: "경제학 박사",
-        description: "100개 퀴즈 완료",
-        icon: "0xe0b0", // Icons.emoji_events
-        progress: 85,
-        unlocked: false,
+        title: "초보 투자자",
+        description: "첫 10문제 정답",
+        icon: "💰",
+        progress: 1.0,
+        unlocked: true,
         color: "#FFD700",
-        condition: {"type": "quiz_completion", "count": 100},
+        condition: {"type": "quiz_completion", "count": 10},
       ),
       Achievement(
         id: 2,
-        title: "연속 학습왕",
-        description: "30일 연속 학습",
-        icon: "0xe0b0", // Icons.star
-        progress: 100,
-        unlocked: true,
+        title: "경제 분석가",
+        description: "50문제 연속 정답",
+        icon: "📊",
+        progress: 0.6,
+        unlocked: false,
         color: "#2196F3",
-        condition: {"type": "streak", "days": 30},
+        condition: {"type": "perfect_quizzes", "count": 50},
       ),
-      // ... more achievements
-    ];
-
-    final userAchievements = [
-      UserAchievement(
-        id: 1,
-        userId: 123,
-        achievementId: 1,
-        unlockedAt: DateTime.now(),
-        progress: 85,
-        isUnlocked: false,
+      Achievement(
+        id: 3,
+        title: "주식 마스터",
+        description: "주식 분야 100% 정답",
+        icon: "📈",
+        progress: 0.25,
+        unlocked: false,
+        color: "#9C27B0",
+        condition: {"type": "category_completion", "category": "stock"},
       ),
-      UserAchievement(
-        id: 2,
-        userId: 123,
-        achievementId: 2,
-        unlockedAt: DateTime.now(),
-        progress: 100,
-        isUnlocked: true,
+      Achievement(
+        id: 4,
+        title: "금융 전문가",
+        description: "모든 카테고리 우수",
+        icon: "🏦",
+        progress: 0.1,
+        unlocked: false,
+        color: "#FF9800",
+        condition: {"type": "category_completion", "count": 10},
       ),
-      // ... more user achievements
+      Achievement(
+        id: 5,
+        title: "경제학 박사",
+        description: "1000문제 돌파",
+        icon: "🎓",
+        progress: 0.05,
+        unlocked: false,
+        color: "#4CAF50",
+        condition: {"type": "quiz_completion", "count": 1000},
+      ),
+      Achievement(
+        id: 6,
+        title: "월스트리트 킹",
+        description: "최상위 랭커 달성",
+        icon: "👑",
+        progress: 0.01,
+        unlocked: false,
+        color: "#E91E63",
+        condition: {"type": "ranking", "position": 1},
+      ),
     ];
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text(
+          "🏆 업적",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
+        child: GridView.builder(
+          itemCount: achievements.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 0.95,
+          ),
+          itemBuilder: (context, index) {
+            final achievement = achievements[index];
+            return Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color:
+                    achievement.unlocked
+                        ? Colors.white
+                        : const Color(0xFFF0F0F0),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color:
+                      achievement.unlocked
+                          ? const Color(0xFF007AFF)
+                          : const Color(0xFFF0F0F0),
+                  width: achievement.unlocked ? 2 : 1,
+                ),
+                boxShadow: [
+                  if (achievement.unlocked)
+                    const BoxShadow(
+                      color: Color(0x29007AFF),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  if (!achievement.unlocked)
+                    const BoxShadow(
+                      color: Color(0x14000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios),
-                        onPressed: () => Navigator.pop(context),
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            achievement.unlocked
+                                ? const Color(0xFF34C759)
+                                : const Color(0xFFF0F0F0),
                       ),
-                      const Text(
-                        '업적 및 뱃지',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      child: Center(
+                        child: Text(
+                          achievement.unlocked ? "✓" : "🔒",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                achievement.unlocked
+                                    ? Colors.white
+                                    : Colors.grey,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      // TODO: 전체 보기 화면으로 이동
-                    },
-                    child: const Text('전체 보기'),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          achievement.unlocked
+                              ? Colors.white
+                              : const Color(0xFFE0E0E0),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      achievement.icon,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    achievement.title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          achievement.unlocked
+                              ? const Color(0xFF1A1A1A)
+                              : const Color(0xFF999999),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    achievement.description,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color:
+                          achievement.unlocked
+                              ? const Color(0xFF666666)
+                              : const Color(0xFFAAAAAA),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F0F0),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      if (achievement.progress > 0)
+                        FractionallySizedBox(
+                          widthFactor: achievement.progress,
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              gradient:
+                                  achievement.unlocked
+                                      ? const LinearGradient(
+                                        colors: [
+                                          Color(0xFF007AFF),
+                                          Color(0xFF34C759),
+                                        ],
+                                      )
+                                      : const LinearGradient(
+                                        colors: [
+                                          Color(0xFFDDDDDD),
+                                          Color(0xFFDDDDDD),
+                                        ],
+                                      ),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1.0,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: achievements.length,
-                  itemBuilder: (context, index) {
-                    final achievement = achievements[index];
-                    final userAchievement = userAchievements.firstWhere(
-                      (ua) => ua.achievementId == achievement.id,
-                      orElse:
-                          () => UserAchievement(
-                            id: 0,
-                            userId: 123,
-                            achievementId: achievement.id,
-                            unlockedAt: DateTime.now(),
-                            progress: 0,
-                            isUnlocked: false,
-                          ),
-                    );
-                    return AchievementCard(
-                      achievement: achievement,
-                      userAchievement: userAchievement,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => AchievementDetailScreen(
-                                  achievement: achievement,
-                                  userAchievement: userAchievement,
-                                ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
