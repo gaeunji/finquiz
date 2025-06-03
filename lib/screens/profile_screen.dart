@@ -1,24 +1,9 @@
 import 'package:flutter/material.dart';
-
-class Achievement {
-  final int id;
-  final String title;
-  final String description;
-  final IconData icon;
-  final int progress;
-  final bool unlocked;
-  final Color color;
-
-  Achievement({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.progress,
-    required this.unlocked,
-    required this.color,
-  });
-}
+import '../models/achievement.dart';
+import '../models/user_achievement.dart';
+import '../widgets/achievements/achievement_card.dart';
+import 'achievements/achievement_detail_screen.dart';
+import 'achievements/achievements_screen.dart';
 
 class Friend {
   final String name;
@@ -53,37 +38,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       id: 1,
       title: "경제학 박사",
       description: "100개 퀴즈 완료",
-      icon: Icons.emoji_events,
+      icon: "0xe0b0", // Icons.emoji_events
       progress: 85,
       unlocked: false,
-      color: Colors.amber,
+      color: "#FFD700",
+      condition: {"type": "quiz_completion", "count": 100},
     ),
     Achievement(
       id: 2,
       title: "연속 학습왕",
       description: "30일 연속 학습",
-      icon: Icons.star,
+      icon: "0xe0b1", // Icons.star
       progress: 100,
       unlocked: true,
-      color: Colors.blue,
+      color: "#2196F3",
+      condition: {"type": "streak", "days": 30},
     ),
     Achievement(
       id: 3,
       title: "완벽주의자",
       description: "10개 퀴즈 만점",
-      icon: Icons.military_tech,
+      icon: "0xe0b2", // Icons.military_tech
       progress: 60,
       unlocked: false,
-      color: Colors.purple,
+      color: "#9C27B0",
+      condition: {"type": "perfect_quizzes", "count": 10},
     ),
     Achievement(
       id: 4,
       title: "전 분야 마스터",
       description: "모든 카테고리 완료",
-      icon: Icons.workspace_premium,
+      icon: "0xe0b3", // Icons.workspace_premium
       progress: 50,
       unlocked: false,
-      color: Colors.orange,
+      color: "#FF9800",
+      condition: {"type": "category_completion", "count": 10},
     ),
   ];
 
@@ -126,295 +115,298 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 80),
-            // 프로필 헤더
+            // Header
             Container(
-              padding: const EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(40, 90, 35, 20),
+              height: 210,
+              width: double.infinity,
+              color: const Color(0xFF005eff),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 프로필 사진 + 이름/레벨
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 프로필 사진
-                      const CircleAvatar(
-                        radius: 30,
-                        backgroundImage: AssetImage('assets/images/avatar.png'),
-                      ),
-                      const SizedBox(width: 16),
-                      // 사용자 이름 + 레벨/칭호
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Johnny",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "레벨 12 · 금융 마스터",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color.fromARGB(255, 84, 84, 84),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 자기소개 입력창
-                  TextField(
-                    style: const TextStyle(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: "Hello World !",
-                      hintStyle: const TextStyle(fontSize: 13),
-                      suffixIcon: const Icon(
-                        Icons.edit,
-                        color: Colors.grey,
-                        size: 18,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF6F8FC),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 16,
-                      ),
-                    ),
-                    maxLines: 1,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 팔로워 / 팔로잉
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                      children: [
-                        TextSpan(
-                          text: "6 ",
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Hello, Johnny',
                           style: TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        TextSpan(
-                          text: "followers",
-                          style: TextStyle(fontWeight: FontWeight.normal),
-                        ),
-                        TextSpan(text: " · "),
-                        TextSpan(
-                          text: "8 ",
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        TextSpan(
-                          text: "following",
-                          style: TextStyle(fontWeight: FontWeight.normal),
+                        SizedBox(height: 4),
+                        Text(
+                          'Great to see you again!',
+                          style: TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
                   ),
+                  const CircleAvatar(
+                    radius: 28,
+                    backgroundImage: AssetImage('assets/images/avatar.png'),
+                  ),
                 ],
               ),
             ),
 
-            SizedBox(height: 24),
-
-            // 학습 통계 요약 카드
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 10, bottom: 4),
-                  child: Text(
-                    "학습 요약",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xff333B69),
+            // Profile Content (overlap effect using Transform.translate)
+            Transform.translate(
+              offset: const Offset(0, -25),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
                     ),
-                  ),
+                  ],
                 ),
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: stats.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 2.8,
-                            crossAxisSpacing: 1.8,
-                            mainAxisSpacing: 2,
-                          ),
-                      itemBuilder: (context, index) {
-                        final item = stats[index];
-                        return Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          elevation: 0,
-                          color: const Color(0xFFF9FAFB),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  item["icon"] as IconData,
-                                  color: item["color"] as Color,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item["value"] as String,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      item["label"] as String,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 24),
-
-            // 설정
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey[200]!),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "설정",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[900],
+                    // 사용자 이름 + 레벨/칭호
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "@ johnny",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "레벨 12 · 금융 마스터",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color.fromARGB(255, 84, 84, 84),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 자기소개 입력창
+                    TextField(
+                      style: const TextStyle(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: "Hello World !",
+                        hintStyle: const TextStyle(fontSize: 13),
+                        suffixIcon: const Icon(
+                          Icons.edit,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF6F8FC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
                       ),
+                      maxLines: 1,
                     ),
-                    SizedBox(height: 16),
-                    _buildSettingItem(
-                      icon: Icons.notifications,
-                      title: "푸시 알림",
-                      subtitle: "일일 리마인더 및 성취 알림",
-                      value: pushNotifications,
-                      onChanged: (value) {
-                        setState(() {
-                          pushNotifications = value;
-                        });
-                      },
-                    ),
-                    Divider(),
-                    _buildSettingItem(
-                      icon: Icons.dark_mode,
-                      title: "다크 모드",
-                      subtitle: "어두운 테마로 전환",
-                      value: darkMode,
-                      onChanged: (value) {
-                        setState(() {
-                          darkMode = value;
-                        });
-                      },
-                    ),
-                    Divider(),
-                    _buildSettingItem(
-                      icon: Icons.volume_up,
-                      title: "효과음",
-                      subtitle: "상호작용 시 오디오 피드백",
-                      value: soundEffects,
-                      onChanged: (value) {
-                        setState(() {
-                          soundEffects = value;
-                        });
-                      },
+                    const SizedBox(height: 16),
+
+                    // 팔로워 / 팔로잉
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                        children: [
+                          TextSpan(
+                            text: "6 ",
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "followers",
+                            style: TextStyle(fontWeight: FontWeight.normal),
+                          ),
+                          TextSpan(text: " · "),
+                          TextSpan(
+                            text: "8 ",
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "following",
+                            style: TextStyle(fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 24),
 
-            // 액션 버튼
-            Column(
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Icons.settings),
-                  label: Text("앱 설정"),
-                  style: OutlinedButton.styleFrom(
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    minimumSize: Size(double.infinity, 48),
+            const SizedBox(height: 12),
+
+            // 학습 통계 요약 카드
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "학습 요약",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xff333B69),
+                    ),
                   ),
-                ),
-                SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () {},
-                  child: Text("로그아웃", style: TextStyle(color: Colors.red[600])),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.red[200]!),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    minimumSize: Size(double.infinity, 48),
+                  const SizedBox(height: 6),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: stats.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.8,
+                          crossAxisSpacing: 1.8,
+                          mainAxisSpacing: 3.2,
+                        ),
+                    itemBuilder: (context, index) {
+                      final item = stats[index];
+                      return Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: const Color.fromARGB(255, 212, 212, 212)!,
+                          ),
+                        ),
+                        elevation: 0,
+                        color: const Color(0xFFF9FAFB),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Icon(
+                                item["icon"] as IconData,
+                                color: item["color"] as Color,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item["value"] as String,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    item["label"] as String,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+
+            const SizedBox(height: 18),
+
+            // 업적 섹션
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '업적',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xff333B69),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AchievementsScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text('전체 보기'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: 160,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: achievements.length,
+                      itemBuilder: (context, index) {
+                        final achievement = achievements[index];
+                        return Container(
+                          width: 160,
+                          margin: const EdgeInsets.only(right: 12),
+                          child: AchievementCard(
+                            achievement: achievement,
+                            userAchievement: null,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => AchievementDetailScreen(
+                                        achievement: achievement,
+                                        userAchievement: null,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
           ],
         ),
       ),
