@@ -54,17 +54,25 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     final endTime = DateTime.now();
     final quizDuration = endTime.difference(startTime);
 
-    final url = Uri.parse('http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete');
-    final answers = quizData.map((q) => {
-      'questionId': q['id'],
-      'selectedAnswer': q['options'][selectedAnswerIndex[q['id']] ?? 0],
-    }).toList();
+    final url = Uri.parse(
+      'http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete',
+    );
+    final answers =
+        quizData
+            .map(
+              (q) => {
+                'questionId': q['id'],
+                'selectedAnswer':
+                    q['options'][selectedAnswerIndex[q['id']] ?? 0],
+              },
+            )
+            .toList();
 
     // print('정답 제출 요청 URL: $url');
     // print('제출 데이터: ${json.encode({'answers': answers})}');
 
-
-    final response = await http.post(url,
+    final response = await http.post(
+      url,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'answers': answers}),
     );
@@ -78,29 +86,31 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
         widget.onComplete!();
       }
 
-      Navigator.pushReplacementNamed(context, '/result', arguments: {
-        'sessionId': widget.sessionId,
-        'score': result['score'],
-        'total': result['total'],
-        'xp': result['score'] * 10,
-        'duration': quizDuration.inSeconds,
-        'results': result['results'],
-      });
+      Navigator.pushReplacementNamed(
+        context,
+        '/result',
+        arguments: {
+          'sessionId': widget.sessionId,
+          'score': result['score'],
+          'total': result['total'],
+          'xp': result['score'] * 10,
+          'duration': quizDuration.inSeconds,
+          'results': result['results'],
+        },
+      );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final quiz = quizData[currentIndex];
     final options = List<String>.from(quiz['options']);
-    final questionId = quiz['id'] is int ? quiz['id'] : int.tryParse(quiz['id'].toString());
+    final questionId =
+        quiz['id'] is int ? quiz['id'] : int.tryParse(quiz['id'].toString());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -128,7 +138,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                   value: (currentIndex + 1) / quizData.length,
                   minHeight: 8,
                   backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xff006FFD)),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xff006FFD),
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -142,10 +154,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
               const SizedBox(height: 8),
               const Text(
                 '정답을 선택하세요.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 30),
               ...List.generate(options.length, (index) {
@@ -170,9 +179,10 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                 child: Column(
                   children: [
                     ElevatedButton(
-                      onPressed: currentIndex < quizData.length - 1
-                          ? () => setState(() => currentIndex++)
-                          : submitAll,
+                      onPressed:
+                          currentIndex < quizData.length - 1
+                              ? () => setState(() => currentIndex++)
+                              : submitAll,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xff006FFD),
                         minimumSize: const Size(double.infinity, 50),
@@ -225,7 +235,6 @@ class AnswerOption extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52,
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -233,13 +242,13 @@ class AnswerOption extends StatelessWidget {
             color: isSelected ? Colors.blue : Colors.grey.shade300,
           ),
           borderRadius: BorderRadius.circular(10),
-          color: isSelected ? const Color(0xffEAF2FF): Colors.transparent,
+          color: isSelected ? const Color(0xffEAF2FF) : Colors.transparent,
         ),
         child: Text(
           text,
-          style: const TextStyle(
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontSize: 16),
+          maxLines: null, // 여러 줄 허용
+          overflow: TextOverflow.visible, // 잘리지 않게 설정
         ),
       ),
     );
@@ -251,16 +260,16 @@ class QuizSessionScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args == null || args['sessionId'] == null || args['quizIds'] == null) {
-      return const Scaffold(
-        body: Center(child: Text('잘못된 접근입니다.')),
-      );
+      return const Scaffold(body: Center(child: Text('잘못된 접근입니다.')));
     }
 
-    final int sessionId = args['sessionId'] is String
-        ? int.tryParse(args['sessionId'].toString()) ?? -1
-        : args['sessionId'] as int;
+    final int sessionId =
+        args['sessionId'] is String
+            ? int.tryParse(args['sessionId'].toString()) ?? -1
+            : args['sessionId'] as int;
 
     final List<int> quizIds = List<int>.from(args['quizIds']);
     final bool isDaily = args['isDaily'] ?? false;

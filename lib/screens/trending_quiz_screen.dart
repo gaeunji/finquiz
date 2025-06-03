@@ -229,7 +229,6 @@ class TrendingQuizDetail extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () {},
                         child: Container(
-                          height: 52,
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -243,6 +242,8 @@ class TrendingQuizDetail extends StatelessWidget {
                           child: Text(
                             e.value,
                             style: const TextStyle(fontSize: 16),
+                            maxLines: null, // 줄바꿈 허용
+                            overflow: TextOverflow.visible, // overflow 방지
                           ),
                         ),
                       ),
