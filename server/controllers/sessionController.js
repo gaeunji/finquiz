@@ -141,6 +141,7 @@ exports.completeSession = async (req, res) => {
     }
 
     const userId = sessionRes.rows[0].user_id;
+    const quiz_ids = sessionRes.rows[0].quiz_ids;
 
     const results = [];
     let correctCount = 0;
@@ -194,8 +195,20 @@ exports.completeSession = async (req, res) => {
       [sessionId]
     );
 
-    // XP 업데이트
-    const xpEarned = correctCount * 10;
+    // XP 업데이트 - 재시도 여부 확인
+    const isRetrySession = await pool.query(
+      `SELECT COUNT(*) FROM quiz_sessions 
+       WHERE user_id = $1 
+       AND quiz_ids = $2 
+       AND session_id != $3 
+       AND is_completed = true`,
+      [userId, quiz_ids, sessionId]
+    );
+
+    // 재시도인 경우 5xp, 처음 푸는 경우 10xp
+    const xpPerQuestion = isRetrySession.rows[0].count > 0 ? 5 : 10;
+    const xpEarned = correctCount * xpPerQuestion;
+
     await pool.query(`UPDATE users SET xp = xp + $1 WHERE user_id = $2;`, [
       xpEarned,
       userId,
@@ -210,6 +223,7 @@ exports.completeSession = async (req, res) => {
       score: correctCount,
       total: answers.length,
       results,
+      xpEarned, // 클라이언트에 획득한 XP 정보 전달
     });
   } catch (err) {
     console.error("세션 완료 실패:", err);
@@ -239,6 +253,51 @@ exports.submitQuizResult = async (req, res) => {
     res.status(200).json({ message: "기록 완료" });
   } catch (err) {
     console.error("기록 실패:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 세션 재시도
+exports.retrySession = async (req, res) => {
+  const sessionId = req.params.sessionId;
+
+  try {
+    // 기존 세션 정보 조회
+    const sessionRes = await pool.query(
+      `SELECT quiz_ids, user_id FROM quiz_sessions WHERE session_id = $1`,
+      [sessionId]
+    );
+
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ error: "세션을 찾을 수 없습니다." });
+    }
+
+    const { quiz_ids, user_id } = sessionRes.rows[0];
+
+    // quiz_ids가 문자열 배열인 경우 정수 배열로 변환
+    const quizIdsArray = Array.isArray(quiz_ids)
+      ? quiz_ids.map((id) => Number(id))
+      : JSON.parse(quiz_ids).map((id) => Number(id));
+
+    // 새로운 세션 생성
+    const insertSession = `
+      INSERT INTO quiz_sessions (quiz_ids, user_id)
+      VALUES ($1, $2)
+      RETURNING session_id;
+    `;
+    const newSessionResult = await pool.query(insertSession, [
+      quizIdsArray,
+      user_id,
+    ]);
+    const newSessionId = newSessionResult.rows[0].session_id;
+
+    // 응답 반환
+    res.status(201).json({
+      sessionId: newSessionId,
+      quizIds: quizIdsArray,
+    });
+  } catch (err) {
+    console.error("세션 재시도 실패:", err);
     res.status(500).json({ error: err.message });
   }
 };

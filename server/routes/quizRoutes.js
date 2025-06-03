@@ -14,6 +14,7 @@ router.post("/questions", quizController.getQuestionsByIds);
 // 세션 관련
 router.post("/session", sessionController.createSession);
 router.post("/session/:sessionId/complete", sessionController.completeSession);
+router.post("/session/:sessionId/retry", sessionController.retrySession);
 router.post("/submit", sessionController.submitQuizResult);
 
 module.exports = router;

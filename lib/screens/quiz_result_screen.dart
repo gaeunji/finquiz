@@ -23,7 +23,8 @@ class QuizResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentText = (score / total * 100).toStringAsFixed(0);
-    final timeStr = duration.inMinutes.toString().padLeft(2, '0') +
+    final timeStr =
+        duration.inMinutes.toString().padLeft(2, '0') +
         ":" +
         (duration.inSeconds % 60).toString().padLeft(2, '0');
 
@@ -35,14 +36,15 @@ class QuizResultScreen extends StatelessWidget {
             Column(
               children: [
                 const SizedBox(height: 120),
-                Image.asset('assets/images/astronaut.png', width: 200, height: 200),
+                Image.asset(
+                  'assets/images/astronaut.png',
+                  width: 200,
+                  height: 200,
+                ),
                 const SizedBox(height: 24),
                 const Text(
                   '경제 감각 좀 있으신데요?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white),
                 ),
                 const SizedBox(height: 72),
                 Padding(
@@ -63,37 +65,23 @@ class QuizResultScreen extends StatelessWidget {
                     children: [
                       SizedBox(
                         width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/review', arguments: results);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            '해설 보기',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
+                        height: 56,
                         child: ElevatedButton(
                           onPressed: () async {
-                            final url = Uri.parse('http://10.0.2.2:5000/quizzes/session/$sessionId/retry');
+                            final url = Uri.parse(
+                              'http://10.0.2.2:5000/quizzes/session/$sessionId/retry',
+                            );
                             final response = await http.post(url);
                             if (response.statusCode == 201) {
                               final data = json.decode(response.body);
-                              Navigator.pushReplacementNamed(context, '/quiz', arguments: {
-                                'sessionId': data['sessionId'],
-                                'quizIds': data['quizIds'],
-                              });
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/quiz',
+                                arguments: {
+                                  'sessionId': data['sessionId'],
+                                  'quizIds': data['quizIds'],
+                                },
+                              );
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -102,9 +90,64 @@ class QuizResultScreen extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            elevation: 2,
                           ),
-                          child: const Text('완료'),
+                          child: const Text(
+                            '다시 풀기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/review',
+                                    arguments: results,
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.9,
+                                  ),
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('해설 보기'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: () => Navigator.pop(context),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.9,
+                                  ),
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('완료'),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -138,11 +181,7 @@ class QuizResultScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          width: 40,
-          height: 1,
-          color: Colors.white60,
-        ),
+        Container(width: 40, height: 1, color: Colors.white60),
         const SizedBox(height: 10),
         Text(
           value,
