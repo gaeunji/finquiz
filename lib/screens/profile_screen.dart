@@ -36,43 +36,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final List<Achievement> achievements = [
     Achievement(
       id: 1,
-      title: "경제학 박사",
-      description: "100개 퀴즈 완료",
-      icon: "0xe0b0", // Icons.emoji_events
-      progress: 85,
-      unlocked: false,
+      title: "초보 투자자",
+      description: "첫 10문제 정답",
+      icon: "💰",
+      progress: 1.0,
+      unlocked: true,
       color: "#FFD700",
-      condition: {"type": "quiz_completion", "count": 100},
+      condition: {"type": "quiz_completion", "count": 10},
     ),
     Achievement(
       id: 2,
-      title: "연속 학습왕",
-      description: "30일 연속 학습",
-      icon: "0xe0b1", // Icons.star
-      progress: 100,
-      unlocked: true,
+      title: "경제 분석가",
+      description: "50문제 연속 정답",
+      icon: "📊",
+      progress: 0.6,
+      unlocked: false,
       color: "#2196F3",
-      condition: {"type": "streak", "days": 30},
+      condition: {"type": "perfect_quizzes", "count": 50},
     ),
     Achievement(
       id: 3,
-      title: "완벽주의자",
-      description: "10개 퀴즈 만점",
-      icon: "0xe0b2", // Icons.military_tech
-      progress: 60,
+      title: "주식 마스터",
+      description: "주식 분야 100% 정답",
+      icon: "📈",
+      progress: 0.25,
       unlocked: false,
       color: "#9C27B0",
-      condition: {"type": "perfect_quizzes", "count": 10},
+      condition: {"type": "category_completion", "category": "stock"},
     ),
     Achievement(
       id: 4,
-      title: "전 분야 마스터",
-      description: "모든 카테고리 완료",
-      icon: "0xe0b3", // Icons.workspace_premium
-      progress: 50,
+      title: "금융 전문가",
+      description: "모든 카테고리 우수",
+      icon: "🏦",
+      progress: 0.1,
       unlocked: false,
       color: "#FF9800",
       condition: {"type": "category_completion", "count": 10},
+    ),
+    Achievement(
+      id: 5,
+      title: "경제학 박사",
+      description: "1000문제 돌파",
+      icon: "🎓",
+      progress: 0.05,
+      unlocked: false,
+      color: "#4CAF50",
+      condition: {"type": "quiz_completion", "count": 1000},
+    ),
+    Achievement(
+      id: 6,
+      title: "월스트리트 킹",
+      description: "최상위 랭커 달성",
+      icon: "👑",
+      progress: 0.01,
+      unlocked: false,
+      color: "#E91E63",
+      condition: {"type": "ranking", "position": 1},
     ),
   ];
 
@@ -381,10 +401,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final achievement = achievements[index];
                         return Container(
                           width: 160,
-                          margin: const EdgeInsets.only(right: 12),
+                          margin: const EdgeInsets.only(right: 16),
                           child: AchievementCard(
                             achievement: achievement,
                             userAchievement: null,
+                            isSimple: true,
                             onTap: () {
                               Navigator.push(
                                 context,
