@@ -4,22 +4,8 @@ import '../models/user_achievement.dart';
 import '../widgets/achievements/achievement_card.dart';
 import 'achievements/achievement_detail_screen.dart';
 import 'achievements/achievements_screen.dart';
-
-class Friend {
-  final String name;
-  final int level;
-  final int xp;
-  final int rank;
-  final String avatar;
-
-  Friend({
-    required this.name,
-    required this.level,
-    required this.xp,
-    required this.rank,
-    required this.avatar,
-  });
-}
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,6 +18,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool pushNotifications = true;
   bool darkMode = false;
   bool soundEffects = true;
+  bool isLoading = true;
+  // 사용자 정보
+  String username = '';
+  int level = 1;
+  int xp = 0;
+  int currentLevelXp = 0;
+  int xpToNextLevel = 0;
+  int progressPercent = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserProfile();
+  }
+
+  Future<void> fetchUserProfile() async {
+    try {
+      const userId = 123;
+
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/users/$userId/info'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          username = data['username'] ?? '';
+          level = data['level'] ?? 1;
+          xp = data['xp'] ?? 0;
+          currentLevelXp = data['currentLevelXp'] ?? 0;
+          xpToNextLevel = data['xpToNextLevel'] ?? 100;
+          progressPercent = data['progressPercent'] ?? 0;
+          isLoading = false;
+        });
+      } else {
+        // 에러 처리
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Handle error
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   final List<Achievement> achievements = [
     Achievement(
@@ -96,13 +129,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
   ];
 
-  final List<Friend> friends = [
-    Friend(name: "김사라", level: 15, xp: 3250, rank: 1, avatar: "👩"),
-    Friend(name: "이민수", level: 12, xp: 2450, rank: 2, avatar: "👨"),
-    Friend(name: "나", level: 12, xp: 2450, rank: 3, avatar: "👤"),
-    Friend(name: "박지영", level: 11, xp: 2100, rank: 4, avatar: "👩‍🦰"),
-  ];
-
   final stats = [
     {
       "icon": Icons.local_fire_department,
@@ -132,6 +158,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SingleChildScrollView(
@@ -149,17 +179,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'Hello, Johnny',
-                          style: TextStyle(
+                          'Hello, $username',
+                          style: const TextStyle(
                             fontSize: 18,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 4),
+                        const Text(
                           'Great to see you again!',
                           style: TextStyle(color: Colors.white70),
                         ),
@@ -195,19 +225,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 사용자 이름 + 레벨/칭호
-                    const Column(
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "@ johnny",
-                          style: TextStyle(
+                          "@ $username",
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          "레벨 12 · 금융 마스터",
+                          "레벨 $level · 금융 마스터",
                           style: TextStyle(
                             fontSize: 14,
                             color: Color.fromARGB(255, 84, 84, 84),
