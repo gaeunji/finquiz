@@ -5,6 +5,7 @@ import 'widgets/review_tab_bar.dart';
 import 'tabs/wrong_quiz_tab.dart';
 import 'tabs/bookmarks_tab.dart';
 import '/services/bookmark_service.dart';
+import '/services/wrong_question_service.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key});
@@ -17,20 +18,16 @@ class _ReviewScreenState extends State<ReviewScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  int _activeIndex = 0;
+  String _searchQuery = '';
   final int userId = 123;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _activeIndex = _tabController.index;
-          });
-        }
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
       });
     });
   }
@@ -49,15 +46,14 @@ class _ReviewScreenState extends State<ReviewScreen>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 여기에 헤더 추가?
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(30, 92, 20, 30),
-            color: const Color(0xFF005eff), // 파란 배경색
+            color: const Color(0xFF005eff),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   '복습 센터',
                   style: TextStyle(
                     fontSize: 22,
@@ -65,43 +61,49 @@ class _ReviewScreenState extends State<ReviewScreen>
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 30),
-                Text(
+                const SizedBox(height: 30),
+                const Text(
                   '약점을 보완하고 실력을 향상시키세요.',
                   style: TextStyle(fontSize: 13, color: Colors.white70),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: '문제 검색...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // 나머지 콘텐츠
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(26, 0, 26, 26),
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-
-                  // const StatDashboard(),
-                  // const SizedBox(height: 24),
-
-                  // 탬 바
-                  ReviewTabBar(
-                    tabController: _tabController,
-                    activeIndex: _activeIndex,
-                  ),
+                  ReviewTabBar(tabController: _tabController),
                   const SizedBox(height: 5),
-
-                  // 탭 뷰
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        WrongQuizTab(),
-                        BookmarksTab(userId: userId),
-                        Center(
-                          child: Text("업데이트 예정"),
-                        ), // // 추후 WeakAreasTab()로 구현하기
+                        WrongQuizTab(userId: userId, searchQuery: _searchQuery),
+                        BookmarksTab(userId: userId, searchQuery: _searchQuery),
+                        const Center(child: Text("업데이트 예정")),
                       ],
                     ),
                   ),

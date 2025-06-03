@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../services/bookmark_service.dart';
 
-
 class BookmarksTab extends StatefulWidget {
   final int userId;
+  final String searchQuery;
 
-  const BookmarksTab({super.key, required this.userId});
+  const BookmarksTab({super.key, required this.userId, this.searchQuery = ''});
 
   @override
   State<BookmarksTab> createState() => _BookmarksTabState();
@@ -14,11 +14,46 @@ class BookmarksTab extends StatefulWidget {
 
 class _BookmarksTabState extends State<BookmarksTab> {
   late Future<List<dynamic>> _bookmarksFuture;
+  List<dynamic> _allBookmarks = [];
+  List<dynamic> _filteredBookmarks = [];
 
   @override
   void initState() {
     super.initState();
-    _bookmarksFuture = BookmarkService.getAllBookmarks(widget.userId);
+    _bookmarksFuture = BookmarkService.getAllBookmarks(widget.userId).then((
+      bookmarks,
+    ) {
+      _allBookmarks = bookmarks;
+      _filteredBookmarks = List.from(bookmarks);
+      return bookmarks;
+    });
+  }
+
+  @override
+  void didUpdateWidget(BookmarksTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      _filterBookmarks(widget.searchQuery);
+    }
+  }
+
+  void _filterBookmarks(String keyword) {
+    final query = keyword.trim();
+    final queryLower = query.toLowerCase();
+    setState(() {
+      _filteredBookmarks =
+          _allBookmarks.where((q) {
+            final questionText = q['question'].toString();
+            final questionTextLower = questionText.toLowerCase();
+            final categoryLabel = getCategoryLabel(q['categoryId'] ?? 0);
+            final categoryLabelLower = categoryLabel.toLowerCase();
+
+            return questionText.contains(query) ||
+                questionTextLower.contains(queryLower) ||
+                categoryLabel.contains(query) ||
+                categoryLabelLower.contains(queryLower);
+          }).toList();
+    });
   }
 
   Color _getDifficultyColor(String level) {
@@ -60,15 +95,13 @@ class _BookmarksTabState extends State<BookmarksTab> {
           return const Center(child: Text('북마크된 문제가 없습니다.'));
         }
 
-        final bookmarkedQuestions = snapshot.data!;
         return ListView(
           padding: const EdgeInsets.all(4),
           children: [
-            _buildSearchBar(),
             const SizedBox(height: 16),
             _buildStudySessionCard(),
             const SizedBox(height: 28),
-            ...bookmarkedQuestions.map((q) => _buildBookmarkCard(q)).toList(),
+            ..._filteredBookmarks.map((q) => _buildBookmarkCard(q)).toList(),
           ],
         );
       },
@@ -182,7 +215,8 @@ class _BookmarksTabState extends State<BookmarksTab> {
   // 문제별 카드
   Widget _buildBookmarkCard(Map<String, dynamic> question) {
     final String questionText = question['question'] ?? '문제 없음';
-    final String bookmarkedDate = (question['bookmarkedAt']?.toString().split('T').first) ?? '날짜 없음';
+    final String bookmarkedDate =
+        (question['bookmarkedAt']?.toString().split('T').first) ?? '날짜 없음';
     final int categoryId = question['categoryId'] ?? 0;
     final String categoryLabel = getCategoryLabel(categoryId);
 
