@@ -67,24 +67,24 @@ class _ReviewScreenState extends State<ReviewScreen>
                   style: TextStyle(fontSize: 13, color: Colors.white70),
                 ),
                 const SizedBox(height: 20),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: '문제 검색...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ),
+                // Container(
+                //   decoration: BoxDecoration(
+                //     color: Colors.white,
+                //     borderRadius: BorderRadius.circular(8),
+                //   ),
+                //   child: TextField(
+                //     controller: _searchController,
+                //     decoration: InputDecoration(
+                //       hintText: '문제 검색...',
+                //       prefixIcon: const Icon(Icons.search),
+                //       border: InputBorder.none,
+                //       contentPadding: const EdgeInsets.symmetric(
+                //         horizontal: 16,
+                //         vertical: 14,
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),

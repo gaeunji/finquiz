@@ -16,6 +16,7 @@ class _BookmarksTabState extends State<BookmarksTab> {
   late Future<List<dynamic>> _bookmarksFuture;
   List<dynamic> _allBookmarks = [];
   List<dynamic> _filteredBookmarks = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -83,6 +84,12 @@ class _BookmarksTabState extends State<BookmarksTab> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<dynamic>>(
       future: _bookmarksFuture,
@@ -98,6 +105,7 @@ class _BookmarksTabState extends State<BookmarksTab> {
         return ListView(
           padding: const EdgeInsets.all(4),
           children: [
+            _buildSearchBar(),
             const SizedBox(height: 16),
             _buildStudySessionCard(),
             const SizedBox(height: 28),
@@ -115,6 +123,8 @@ class _BookmarksTabState extends State<BookmarksTab> {
         // 검색 입력창
         Expanded(
           child: TextField(
+            controller: _searchController,
+            onChanged: _filterBookmarks,
             decoration: InputDecoration(
               hintText: '북마크 검색...',
               filled: true,
