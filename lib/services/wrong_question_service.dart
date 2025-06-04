@@ -1,10 +1,12 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'http_client.dart';
 
 class WrongQuestionService {
+  final LoggingHttpClient _client = LoggingHttpClient();
+
   Future<List<Map<String, dynamic>>> fetchWrongQuestions(int userId) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('${ApiConfig.baseUrl}/wrong-questions/$userId'),
     );
 
@@ -17,7 +19,7 @@ class WrongQuestionService {
   }
 
   Future<Map<String, dynamic>> createReviewSession(int userId) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('${ApiConfig.baseUrl}/quizzes/review/wrong'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'userId': userId}),
@@ -28,5 +30,9 @@ class WrongQuestionService {
     } else {
       throw Exception('복습 세션 생성에 실패했습니다.');
     }
+  }
+
+  void dispose() {
+    _client.close();
   }
 }
