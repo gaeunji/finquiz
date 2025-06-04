@@ -1,76 +1,152 @@
 import 'package:flutter/material.dart';
 import '../../models/achievement.dart';
 import '../../models/user_achievement.dart';
-import '../../widgets/achievements/achievement_card.dart';
-import 'achievement_detail_screen.dart';
+import '../../services/achievement_service.dart';
 
-class AchievementsScreen extends StatelessWidget {
-  const AchievementsScreen({Key? key}) : super(key: key);
+class AchievementsScreen extends StatefulWidget {
+  final int userId;
+
+  const AchievementsScreen({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  late final AchievementService _achievementService;
+  List<Achievement> _achievements = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _achievementService = AchievementService(baseUrl: 'http://10.0.2.2:5000');
+    _loadAchievements();
+  }
+
+  Future<void> _loadAchievements() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      print('Loading achievements for user ${widget.userId}');
+      final userAchievements = await _achievementService.getUserAchievements(
+        widget.userId,
+      );
+
+      print('Loaded ${userAchievements.length} achievements');
+      setState(() {
+        _achievements = userAchievements.map((ua) => ua.achievement).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading achievements: $e');
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _updateAchievements() async {
+    try {
+      // 사용자 데이터 예시
+      final userData = {
+        'totalQuizCount': 50,
+        'perfectScores': 15,
+        'consecutiveDays': 5,
+        'categoryQuizCounts': {
+          3: 80, // 금융 카테고리
+          6: 60, // 시사 상식 카테고리
+        },
+        'bookmarkCount': 15,
+        'xpAmount': 2500,
+      };
+
+      final updatedAchievements = await _achievementService
+          .updateAllUserAchievements(userId: widget.userId, userData: userData);
+
+      setState(() {
+        _achievements = updatedAchievements;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('업적이 업데이트되었습니다')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('업적 업데이트 실패: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final achievements = [
-      Achievement(
-        id: 1,
-        title: "초보 투자자",
-        description: "첫 10문제 정답",
-        icon: "💰",
-        progress: 1.0,
-        unlocked: true,
-        color: "#FFD700",
-        condition: {"type": "quiz_completion", "count": 10},
-      ),
-      Achievement(
-        id: 2,
-        title: "경제 분석가",
-        description: "50문제 연속 정답",
-        icon: "📊",
-        progress: 0.6,
-        unlocked: false,
-        color: "#2196F3",
-        condition: {"type": "perfect_quizzes", "count": 50},
-      ),
-      Achievement(
-        id: 3,
-        title: "주식 마스터",
-        description: "주식 분야 100% 정답",
-        icon: "📈",
-        progress: 0.25,
-        unlocked: false,
-        color: "#9C27B0",
-        condition: {"type": "category_completion", "category": "stock"},
-      ),
-      Achievement(
-        id: 4,
-        title: "금융 전문가",
-        description: "모든 카테고리 우수",
-        icon: "🏦",
-        progress: 0.1,
-        unlocked: false,
-        color: "#FF9800",
-        condition: {"type": "category_completion", "count": 10},
-      ),
-      Achievement(
-        id: 5,
-        title: "경제학 박사",
-        description: "1000문제 돌파",
-        icon: "🎓",
-        progress: 0.05,
-        unlocked: false,
-        color: "#4CAF50",
-        condition: {"type": "quiz_completion", "count": 1000},
-      ),
-      Achievement(
-        id: 6,
-        title: "월스트리트 킹",
-        description: "최상위 랭커 달성",
-        icon: "👑",
-        progress: 0.01,
-        unlocked: false,
-        color: "#E91E63",
-        condition: {"type": "ranking", "position": 1},
-      ),
-    ];
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('업적을 불러오는 중...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            "🏆 업적",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          foregroundColor: Colors.black,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                '업적을 불러오는데 실패했습니다',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadAchievements,
+                icon: const Icon(Icons.refresh),
+                label: const Text('다시 시도'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -83,11 +159,17 @@ class AchievementsScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _updateAchievements,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
         child: GridView.builder(
-          itemCount: achievements.length,
+          itemCount: _achievements.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 16,
@@ -95,30 +177,30 @@ class AchievementsScreen extends StatelessWidget {
             childAspectRatio: 0.95,
           ),
           itemBuilder: (context, index) {
-            final achievement = achievements[index];
+            final achievement = _achievements[index];
             return Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color:
-                    achievement.unlocked
+                    achievement.unlocked ?? false
                         ? Colors.white
                         : const Color(0xFFF0F0F0),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color:
-                      achievement.unlocked
+                      achievement.unlocked ?? false
                           ? const Color(0xFF007AFF)
                           : const Color(0xFFF0F0F0),
-                  width: achievement.unlocked ? 2 : 1,
+                  width: achievement.unlocked ?? false ? 2 : 1,
                 ),
                 boxShadow: [
-                  if (achievement.unlocked)
+                  if (achievement.unlocked ?? false)
                     const BoxShadow(
                       color: Color(0x29007AFF),
                       blurRadius: 12,
                       offset: Offset(0, 4),
                     ),
-                  if (!achievement.unlocked)
+                  if (!(achievement.unlocked ?? false))
                     const BoxShadow(
                       color: Color(0x14000000),
                       blurRadius: 8,
@@ -137,17 +219,17 @@ class AchievementsScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color:
-                            achievement.unlocked
+                            achievement.unlocked ?? false
                                 ? const Color(0xFF34C759)
                                 : const Color(0xFFF0F0F0),
                       ),
                       child: Center(
                         child: Text(
-                          achievement.unlocked ? "✓" : "🔒",
+                          achievement.unlocked ?? false ? "✓" : "🔒",
                           style: TextStyle(
                             fontSize: 12,
                             color:
-                                achievement.unlocked
+                                achievement.unlocked ?? false
                                     ? Colors.white
                                     : Colors.grey,
                           ),
@@ -162,13 +244,13 @@ class AchievementsScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color:
-                          achievement.unlocked
+                          achievement.unlocked ?? false
                               ? Colors.white
                               : const Color(0xFFE0E0E0),
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      achievement.icon,
+                      achievement.icon ?? '🏆',
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
@@ -179,7 +261,7 @@ class AchievementsScreen extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color:
-                          achievement.unlocked
+                          achievement.unlocked ?? false
                               ? const Color(0xFF1A1A1A)
                               : const Color(0xFF999999),
                     ),
@@ -191,7 +273,7 @@ class AchievementsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       color:
-                          achievement.unlocked
+                          achievement.unlocked ?? false
                               ? const Color(0xFF666666)
                               : const Color(0xFFAAAAAA),
                     ),
@@ -208,14 +290,15 @@ class AchievementsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      if (achievement.progress > 0)
+                      if (achievement.progress != null &&
+                          achievement.progress! > 0)
                         FractionallySizedBox(
-                          widthFactor: achievement.progress,
+                          widthFactor: achievement.progress! / 100,
                           child: Container(
                             height: 4,
                             decoration: BoxDecoration(
                               gradient:
-                                  achievement.unlocked
+                                  achievement.unlocked ?? false
                                       ? const LinearGradient(
                                         colors: [
                                           Color(0xFF007AFF),

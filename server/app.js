@@ -46,4 +46,7 @@ app.use("/wrong-questions", wrongQuestionRoutes);
 const userRoutes = require("./routes/userRoutes");
 app.use("/users", userRoutes);
 
+const achievementRoutes = require("./routes/achievementRoutes");
+app.use("/achievements", achievementRoutes);
+
 module.exports = app;

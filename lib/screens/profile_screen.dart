@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../models/user_achievement.dart';
 import '../widgets/achievements/achievement_card.dart';
+import '../services/achievement_service.dart';
 import 'achievements/achievement_detail_screen.dart';
 import 'achievements/achievements_screen.dart';
 import 'package:http/http.dart' as http;
@@ -25,11 +26,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int currentLevelXp = 0;
   int xpToNextLevel = 0;
   int progressPercent = 0;
+  List<Achievement> achievements = [];
+  late final AchievementService _achievementService;
 
   @override
   void initState() {
     super.initState();
+    _achievementService = AchievementService(baseUrl: 'http://10.0.2.2:5000');
     fetchUserProfile();
+    _loadAchievements();
+  }
+
+  Future<void> _loadAchievements() async {
+    try {
+      const userId = 123; // TODO: 실제 사용자 ID로 교체 필요
+      final userAchievements = await _achievementService.getUserAchievements(
+        userId,
+      );
+      setState(() {
+        achievements = userAchievements.map((ua) => ua.achievement).toList();
+      });
+    } catch (e) {
+      // 에러 처리
+      print('Error loading achievements: $e');
+    }
   }
 
   Future<void> fetchUserProfile() async {
@@ -62,69 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
     }
   }
-
-  final List<Achievement> achievements = [
-    Achievement(
-      id: 1,
-      title: "초보 투자자",
-      description: "첫 10문제 정답",
-      icon: "💰",
-      progress: 1.0,
-      unlocked: true,
-      color: "#FFD700",
-      condition: {"type": "quiz_completion", "count": 10},
-    ),
-    Achievement(
-      id: 2,
-      title: "경제 분석가",
-      description: "50문제 연속 정답",
-      icon: "📊",
-      progress: 0.6,
-      unlocked: false,
-      color: "#2196F3",
-      condition: {"type": "perfect_quizzes", "count": 50},
-    ),
-    Achievement(
-      id: 3,
-      title: "주식 마스터",
-      description: "주식 분야 100% 정답",
-      icon: "📈",
-      progress: 0.25,
-      unlocked: false,
-      color: "#9C27B0",
-      condition: {"type": "category_completion", "category": "stock"},
-    ),
-    Achievement(
-      id: 4,
-      title: "금융 전문가",
-      description: "모든 카테고리 우수",
-      icon: "🏦",
-      progress: 0.1,
-      unlocked: false,
-      color: "#FF9800",
-      condition: {"type": "category_completion", "count": 10},
-    ),
-    Achievement(
-      id: 5,
-      title: "경제학 박사",
-      description: "1000문제 돌파",
-      icon: "🎓",
-      progress: 0.05,
-      unlocked: false,
-      color: "#4CAF50",
-      condition: {"type": "quiz_completion", "count": 1000},
-    ),
-    Achievement(
-      id: 6,
-      title: "월스트리트 킹",
-      description: "최상위 랭커 달성",
-      icon: "👑",
-      progress: 0.01,
-      unlocked: false,
-      color: "#E91E63",
-      condition: {"type": "ranking", "position": 1},
-    ),
-  ];
 
   final stats = [
     {
@@ -406,7 +363,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AchievementsScreen(),
+                              builder:
+                                  (context) => AchievementsScreen(userId: 123),
                             ),
                           );
                         },
@@ -419,7 +377,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 160,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: achievements.length,
+                      itemCount:
+                          achievements.length > 4 ? 4 : achievements.length,
                       itemBuilder: (context, index) {
                         final achievement = achievements[index];
                         return Container(
