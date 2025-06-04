@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../services/wrong_question_service.dart';
+import '../../quiz_session_screen.dart';
 
 class WrongQuizTab extends StatefulWidget {
   final int userId;
@@ -204,7 +205,33 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
               ],
             ),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () async {
+                try {
+                  final session = await _service.createReviewSession(
+                    widget.userId,
+                  );
+                  if (!mounted) return;
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => QuizSessionScreen(
+                            sessionId: session['sessionId'],
+                            quizIds: List<int>.from(session['quizIds']),
+                          ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('복습 세션 생성 실패: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.red,
