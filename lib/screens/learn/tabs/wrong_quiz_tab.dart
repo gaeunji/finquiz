@@ -118,6 +118,8 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
         // 검색 입력창
         Expanded(
           child: TextField(
+            controller: _searchController,
+            onChanged: _filterQuestions,
             decoration: InputDecoration(
               hintText: '틀린 문제 검색...',
               filled: true,
@@ -221,7 +223,7 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
       onTap: () {},
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+        padding: const EdgeInsets.fromLTRB(20, 14, 16, 18),
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -248,42 +250,14 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
                     // 카테고리 뱃지 (왼쪽)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
+                        horizontal: 2,
                         vertical: 4,
                       ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                        ), // border 추가
-                        borderRadius: BorderRadius.circular(20),
-                      ),
                       child: Text(
-                        question['category'] ?? '카테고리', // + null 값 처리
-                        style: const TextStyle(
+                        question['category'] ?? '카테고리',
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // 난이도 뱃지 (오른쪽)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getDifficultyColor(question['difficulty']),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        question['difficulty'] ?? '난이도',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
+                          color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -291,24 +265,24 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
                   ],
                 ),
 
+                const SizedBox(height: 12),
+
                 const Icon(LucideIcons.chevronRight, color: Colors.grey),
               ],
             ),
-
-            const SizedBox(height: 16),
-
+            const SizedBox(height: 4),
             // 질문
             Text(
               question['question'],
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
                 height: 1.4,
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // 내 답변 / 정답
             Column(
@@ -321,7 +295,7 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
                     border: Border.all(color: Colors.red.shade200),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   child: Text.rich(
                     TextSpan(
                       children: [
@@ -372,7 +346,7 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // 마지막 시도일 + 틀린 횟수
             Row(
@@ -384,23 +358,9 @@ class _WrongQuizTabState extends State<WrongQuizTab> {
                     const SizedBox(width: 4),
                     Text(
                       question['lastAttempt'] ?? '1일 전', // 아직 구현 안 됨
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 10, color: Colors.grey),
                     ),
                   ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${question['attempts'] ?? 1}회 틀림', // 아직 구현 안 됨
-                    style: const TextStyle(fontSize: 11, color: Colors.red),
-                  ),
                 ),
               ],
             ),

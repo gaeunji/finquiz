@@ -164,12 +164,12 @@ exports.completeSession = async (req, res) => {
       if (isCorrect) correctCount++;
 
       await pool.query(
-        `INSERT INTO user_answers (session_id, question_id, selected_answer, is_correct)
+        `INSERT INTO user_answers (user_id, question_id, selected_answer, is_correct)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (session_id, question_id) DO UPDATE 
+         ON CONFLICT (user_id, question_id) DO UPDATE 
          SET selected_answer = EXCLUDED.selected_answer,
-             is_correct = EXCLUDED.is_correct`,
-        [sessionId, questionId, selectedAnswer, isCorrect]
+         is_correct = EXCLUDED.is_correct`,
+        [userId, questionId, selectedAnswer, isCorrect]
       );
 
       await pool.query(
