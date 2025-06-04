@@ -19,7 +19,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool darkMode = false;
   bool soundEffects = true;
   bool isLoading = true;
-  // 사용자 정보
   String username = '';
   int level = 1;
   int xp = 0;
@@ -35,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> fetchUserProfile() async {
     try {
-      const userId = 123;
+      const userId = 123; // TODO: 실제 사용자 ID로 교체 필요
 
       final response = await http.get(
         Uri.parse('http://10.0.2.2:5000/users/$userId/info'),
@@ -53,13 +52,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           isLoading = false;
         });
       } else {
-        // 에러 처리
         setState(() {
           isLoading = false;
         });
       }
     } catch (e) {
-      // Handle error
       setState(() {
         isLoading = false;
       });
@@ -167,7 +164,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.fromLTRB(40, 90, 35, 20),
               height: 210,
@@ -203,8 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
-            // Profile Content (overlap effect using Transform.translate)
             Transform.translate(
               offset: const Offset(0, -25),
               child: Container(
@@ -224,7 +218,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 사용자 이름 + 레벨/칭호
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -235,12 +228,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           "레벨 $level · 금융 마스터",
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: Color.fromARGB(255, 84, 84, 84),
+                            color: Color(0xFF545454),
                           ),
                         ),
                       ],

@@ -14,7 +14,7 @@ class QuizSessionScreen extends StatefulWidget {
     required this.sessionId,
     required this.quizIds,
     this.isDaily = false,
-    this.onComplete, // 오늘의 퀴즈 완료 상태 전환하는 콜백 함수
+    this.onComplete,
   });
 
   @override
@@ -24,8 +24,7 @@ class QuizSessionScreen extends StatefulWidget {
 class _QuizSessionScreenState extends State<QuizSessionScreen> {
   int currentIndex = 0;
   List<Map<String, dynamic>> quizData = [];
-  Map<int, int> selectedAnswerIndex = {}; // questionId -> index
-
+  Map<int, int> selectedAnswerIndex = {};
   bool isLoading = true;
   late DateTime startTime;
 
@@ -38,10 +37,10 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
 
   Future<void> fetchAllQuizzes() async {
     for (var id in widget.quizIds) {
-      final url = Uri.parse('http://10.0.2.2:5000/quizzes/$id');
+      final url = Uri.parse(
+        'http://10.0.2.2:5000/quizzes/$id',
+      ); // TODO: API URL을 환경 변수로 이동
       final response = await http.get(url);
-      // print('응답 상태: ${response.statusCode}'); \
-      // print('문제 내용: ${response.body}');
 
       if (response.statusCode == 200) {
         quizData.add(json.decode(response.body));
@@ -55,7 +54,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     final quizDuration = endTime.difference(startTime);
 
     final url = Uri.parse(
-      'http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete',
+      'http://10.0.2.2:5000/quizzes/session/${widget.sessionId}/complete', // TODO: API URL을 환경 변수로 이동
     );
     final answers =
         quizData
@@ -68,9 +67,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
             )
             .toList();
 
-    // print('정답 제출 요청 URL: $url');
-    // print('제출 데이터: ${json.encode({'answers': answers})}');
-
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -80,8 +76,6 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     if (response.statusCode == 200) {
       final result = json.decode(response.body);
 
-      // 정답 제출 후 결과 페이지로 넘어가기 전에
-      // 오늘의 퀴즈일 경우 완료 처리
       if (widget.isDaily && widget.onComplete != null) {
         widget.onComplete!();
       }
@@ -244,12 +238,7 @@ class AnswerOption extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           color: isSelected ? const Color(0xffEAF2FF) : Colors.transparent,
         ),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 16),
-          maxLines: null, // 여러 줄 허용
-          overflow: TextOverflow.visible, // 잘리지 않게 설정
-        ),
+        child: Text(text, style: const TextStyle(fontSize: 16), maxLines: null),
       ),
     );
   }
@@ -261,25 +250,12 @@ class QuizSessionScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args == null || args['sessionId'] == null || args['quizIds'] == null) {
-      return const Scaffold(body: Center(child: Text('잘못된 접근입니다.')));
-    }
-
-    final int sessionId =
-        args['sessionId'] is String
-            ? int.tryParse(args['sessionId'].toString()) ?? -1
-            : args['sessionId'] as int;
-
-    final List<int> quizIds = List<int>.from(args['quizIds']);
-    final bool isDaily = args['isDaily'] ?? false;
-    final VoidCallback? onComplete = args['onComplete'];
-
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     return QuizSessionScreen(
-      sessionId: sessionId,
-      quizIds: quizIds,
-      isDaily: isDaily,
-      onComplete: onComplete,
+      sessionId: args['sessionId'],
+      quizIds: List<int>.from(args['quizIds']),
+      isDaily: args['isDaily'] ?? false,
+      onComplete: args['onComplete'],
     );
   }
 }

@@ -90,19 +90,11 @@ class TrendingQuizDetail extends StatelessWidget {
                   GestureDetector(
                     onTap: () async {
                       try {
-                        // 테스트용 URL
                         const testUrl = 'https://www.google.com';
-                        debugPrint('URL 실행 시도: $testUrl');
-
-                        final result = await launchUrlString(
+                        await launchUrlString(
                           testUrl,
                           mode: LaunchMode.externalApplication,
                         );
-
-                        debugPrint('URL 실행 결과: $result');
-                        if (!result) {
-                          debugPrint('URL 실행 실패: launchUrlString이 false를 반환');
-                        }
                       } catch (e) {
                         debugPrint('URL 실행 중 오류 발생: $e');
                       }

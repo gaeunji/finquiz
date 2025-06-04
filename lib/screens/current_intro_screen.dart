@@ -11,7 +11,7 @@ class CurrentIntroScreen extends StatefulWidget {
 }
 
 class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
-  final int userId = 123;
+  final int userId = 123; // TODO: 실제 사용자 ID로 교체 필요
 
   int? categoryId;
   Map<String, dynamic>? categoryData;
@@ -21,7 +21,8 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (args == null || args['id'] == null) {
       setState(() {
@@ -69,7 +70,6 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
         body: json.encode({'categoryId': categoryId, 'userId': userId}),
       );
 
-
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         final sessionId = data['sessionId'];
@@ -86,151 +86,165 @@ class _CurrentIntroScreenState extends State<CurrentIntroScreen> {
     } catch (e) {
       showSnackBar('서버 통신 실패: $e');
     }
-
   }
 
   void showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-          ? Center(child: Text(errorMessage!))
-          : Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height,
-                ),
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 0),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 12,
-                      offset: Offset(0, -4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 상단 아이콘 + 북마크
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_ios, color: Colors.grey),
-                          onPressed: () => Navigator.pop(context),
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+              ? Center(child: Text(errorMessage!))
+              : Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height,
                         ),
-                        BookmarkIcon(
-                          userId: userId,
-                          targetId: categoryId!,
-                          type: BookmarkType.category,
+                        padding: const EdgeInsets.fromLTRB(24, 60, 24, 0),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 12,
+                              offset: Offset(0, -4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      categoryData!['name'],
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      categoryData!['description'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xff727272),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      "이런 내용을 다뤄요!",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...List.generate(
-                      (categoryData!['keywords'] as List).length,
-                          (index) {
-                        final keyword = categoryData!['keywords'][index].toString();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: SizedBox(
-                            width: 334,
-                            height: 52,
-                            child: ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xffEAF2FF),
-                                foregroundColor: Colors.black,
-                                elevation: 0,
-                                alignment: Alignment.centerLeft,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
                                 ),
-                              ),
-                              child: Text(
-                                keyword,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                BookmarkIcon(
+                                  userId: userId,
+                                  targetId: categoryId!,
+                                  type: BookmarkType.category,
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              categoryData!['name'],
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                        );
-                      },
+                            const SizedBox(height: 8),
+                            Text(
+                              categoryData!['description'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xff727272),
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            const Text(
+                              "이런 내용을 다뤄요!",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...List.generate(
+                              (categoryData!['keywords'] as List).length,
+                              (index) {
+                                final keyword =
+                                    categoryData!['keywords'][index].toString();
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
+                                  child: SizedBox(
+                                    width: 334,
+                                    height: 52,
+                                    child: ElevatedButton(
+                                      onPressed: () {},
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xffEAF2FF,
+                                        ),
+                                        foregroundColor: Colors.black,
+                                        elevation: 0,
+                                        alignment: Alignment.centerLeft,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        keyword,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 60),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 60),
-                  ],
+                  ),
+                ],
+              ),
+      bottomNavigationBar:
+          isLoading || errorMessage != null
+              ? null
+              : Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: createQuizSession,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff006FFD),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      '시작하기',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: isLoading || errorMessage != null
-          ? null
-          : Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
-        child: SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: createQuizSession,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xff006FFD),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '시작하기',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
