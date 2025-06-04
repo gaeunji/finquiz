@@ -260,70 +260,48 @@ class _BookmarksTabState extends State<BookmarksTab> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
+                        horizontal: 2,
                         vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         categoryLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black87,
+                          color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Container(
-                    //   padding: const EdgeInsets.symmetric(
-                    //     horizontal: 10,
-                    //     vertical: 4,
-                    //   ),
-                    //   decoration: BoxDecoration(
-                    //     color: _getDifficultyColor(question['difficulty']),
-                    //     borderRadius: BorderRadius.circular(20),
-                    //   ),
-                    //   child: Text(
-                    //     question['difficulty'],
-                    //     style: const TextStyle(
-                    //       fontSize: 12,
-                    //       color: Colors.white,
-                    //       fontWeight: FontWeight.w500,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
                 const Icon(LucideIcons.chevronRight, color: Colors.grey),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
 
             // 질문 텍스트
             Text(
               questionText,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
                 height: 1.4,
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
             // 북마크 날짜
             Row(
               children: [
-                const Icon(LucideIcons.tag, size: 14, color: Colors.grey),
+                const Icon(LucideIcons.tag, size: 12, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
                   '북마크: $bookmarkedDate',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
               ],
             ),

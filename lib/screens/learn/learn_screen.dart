@@ -66,25 +66,7 @@ class _ReviewScreenState extends State<ReviewScreen>
                   '약점을 보완하고 실력을 향상시키세요.',
                   style: TextStyle(fontSize: 13, color: Colors.white70),
                 ),
-                const SizedBox(height: 20),
-                // Container(
-                //   decoration: BoxDecoration(
-                //     color: Colors.white,
-                //     borderRadius: BorderRadius.circular(8),
-                //   ),
-                //   child: TextField(
-                //     controller: _searchController,
-                //     decoration: InputDecoration(
-                //       hintText: '문제 검색...',
-                //       prefixIcon: const Icon(Icons.search),
-                //       border: InputBorder.none,
-                //       contentPadding: const EdgeInsets.symmetric(
-                //         horizontal: 16,
-                //         vertical: 14,
-                //       ),
-                //     ),
-                //   ),
-                // ),
+                const SizedBox(height: 12),
               ],
             ),
           ),

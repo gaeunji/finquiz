@@ -35,7 +35,6 @@ exports.createSession = async (req, res) => {
     // 특정 퀴즈 ID들이 제공된 경우 (일일 퀴즈 등)
     if (specificQuizIds && Array.isArray(specificQuizIds)) {
       quizIds = specificQuizIds.map((id) => Number(id));
-      console.log("📌 특정 퀴즈 ID로 세션 생성:", quizIds);
     }
     // 카테고리별 랜덤 퀴즈 (기존 로직)
     else if (req.body.categoryId) {
@@ -164,12 +163,12 @@ exports.completeSession = async (req, res) => {
       if (isCorrect) correctCount++;
 
       await pool.query(
-        `INSERT INTO user_answers (session_id, question_id, selected_answer, is_correct)
+        `INSERT INTO user_answers (user_id, question_id, selected_answer, is_correct)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (session_id, question_id) DO UPDATE 
+         ON CONFLICT (user_id, question_id) DO UPDATE 
          SET selected_answer = EXCLUDED.selected_answer,
-             is_correct = EXCLUDED.is_correct`,
-        [sessionId, questionId, selectedAnswer, isCorrect]
+         is_correct = EXCLUDED.is_correct`,
+        [userId, questionId, selectedAnswer, isCorrect]
       );
 
       await pool.query(
@@ -299,5 +298,58 @@ exports.retrySession = async (req, res) => {
   } catch (err) {
     console.error("세션 재시도 실패:", err);
     res.status(500).json({ error: err.message });
+  }
+};
+
+// 틀린 퀴즈 복습 세션 생성
+exports.createReviewSessionFromWrong = async (req, res) => {
+  const { userId, count = 5 } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId는 필수입니다." });
+  }
+
+  try {
+    // 1. 틀린 문제 ID 조회
+    const wrongQuery = `
+      SELECT DISTINCT question_id, answered_at
+      FROM user_answers
+      WHERE user_id = $1 AND is_correct = false
+      ORDER BY answered_at DESC
+      LIMIT $2;
+    `;
+    const wrongResult = await pool.query(wrongQuery, [userId, count]);
+    let wrongQuestionIds = wrongResult.rows.map((row) => row.question_id);
+
+    if (wrongQuestionIds.length === 0) {
+      return res.status(404).json({ error: "틀린 퀴즈가 존재하지 않습니다." });
+    }
+
+    // 2. 랜덤 추출
+    wrongQuestionIds = wrongQuestionIds
+      .sort(() => Math.random() - 0.5)
+      .slice(0, count);
+
+    // 3. 세션 생성
+    const insertSession = `
+      INSERT INTO quiz_sessions (quiz_ids, user_id)
+      VALUES ($1, $2)
+      RETURNING session_id;
+    `;
+    const sessionRes = await pool.query(insertSession, [
+      wrongQuestionIds,
+      userId,
+    ]);
+    const sessionId = sessionRes.rows[0].session_id;
+
+    // 4. 응답
+    res.status(201).json({
+      sessionId,
+      quizIds: wrongQuestionIds,
+      actualCount: wrongQuestionIds.length,
+    });
+  } catch (err) {
+    console.error("복습 세션 생성 실패:", err);
+    res.status(500).json({ error: "서버 오류" });
   }
 };
