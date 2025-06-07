@@ -1,15 +1,16 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/trending_quiz.dart';
+import 'http_client.dart';
 
 class QuizService {
   final String baseUrl;
+  final LoggingHttpClient _client = LoggingHttpClient();
 
   QuizService({required this.baseUrl});
 
   Future<List<TrendingQuiz>> getTrendingQuizzes() async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/api/trending-quizzes'),
       );
 
@@ -22,5 +23,9 @@ class QuizService {
     } catch (e) {
       throw Exception('Error fetching trending quizzes: $e');
     }
+  }
+
+  void dispose() {
+    _client.close();
   }
 }

@@ -20,8 +20,6 @@ class QuizReviewScreen extends StatelessWidget {
         centerTitle: true,
       ),
       backgroundColor: const Color(0xFFF7F9FC),
-
-      // 결과 목록 리스트
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         itemCount: results.length,
@@ -30,7 +28,6 @@ class QuizReviewScreen extends StatelessWidget {
           final item = results[index];
           final isCorrect = item['correct'] == true;
 
-          // 각 문제별 해설 카드
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Stack(
@@ -53,16 +50,21 @@ class QuizReviewScreen extends StatelessWidget {
                     // 문제 제목 + 정오 아이콘
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 2), // 1. 아이콘과 안 겹치게 위 여백 추가하는 방법
+                        padding: const EdgeInsets.only(
+                          top: 2,
+                        ), // 1. 아이콘과 안 겹치게 위 여백 추가하는 방법
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container( // ✅ 정답/오답 원 아이콘
+                            Container(
                               width: 18,
                               height: 18,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isCorrect ? Colors.green[100] : Colors.red[100],
+                                color:
+                                    isCorrect
+                                        ? Colors.green[100]
+                                        : Colors.red[100],
                               ),
                               child: Icon(
                                 isCorrect ? Icons.check : Icons.close,
@@ -73,7 +75,7 @@ class QuizReviewScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.only(right: 24), // 2. 아이콘과 안 겹치게 문제 오른쪽 여백 추가하는 방법
+                                padding: const EdgeInsets.only(right: 24),
                                 child: Text(
                                   '문제 ${index + 1}: ${item['questionText'] ?? '질문을 불러올 수 없습니다.'}',
                                   style: const TextStyle(fontSize: 14),
@@ -83,10 +85,7 @@ class QuizReviewScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
-                      // 사용자 답변
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: RichText(
@@ -108,8 +107,6 @@ class QuizReviewScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-
-                      // 실제 정답
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: RichText(
@@ -129,8 +126,6 @@ class QuizReviewScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-
-                      // 해설 박스
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Container(
@@ -166,12 +161,11 @@ class QuizReviewScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 북마크 아이콘
                 Positioned(
                   top: 8,
                   right: 2,
                   child: BookmarkIcon(
-                    userId: 123, // 실제 유저 ID로 대체
+                    userId: 123, // TODO: 실제 유저 ID로 대체
                     targetId: item['questionId'],
                     type: BookmarkType.question,
                   ),
@@ -185,7 +179,6 @@ class QuizReviewScreen extends StatelessWidget {
   }
 }
 
-// // arguments로 받은 results를 전달 -> QuizReviewScreen 생성
 class QuizReviewScreenWrapper extends StatelessWidget {
   const QuizReviewScreenWrapper({super.key});
 

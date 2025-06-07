@@ -90,19 +90,11 @@ class TrendingQuizDetail extends StatelessWidget {
                   GestureDetector(
                     onTap: () async {
                       try {
-                        // 테스트용 URL
                         const testUrl = 'https://www.google.com';
-                        debugPrint('URL 실행 시도: $testUrl');
-
-                        final result = await launchUrlString(
+                        await launchUrlString(
                           testUrl,
                           mode: LaunchMode.externalApplication,
                         );
-
-                        debugPrint('URL 실행 결과: $result');
-                        if (!result) {
-                          debugPrint('URL 실행 실패: launchUrlString이 false를 반환');
-                        }
                       } catch (e) {
                         debugPrint('URL 실행 중 오류 발생: $e');
                       }
@@ -229,7 +221,6 @@ class TrendingQuizDetail extends StatelessWidget {
                       child: GestureDetector(
                         onTap: () {},
                         child: Container(
-                          height: 52,
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -243,6 +234,8 @@ class TrendingQuizDetail extends StatelessWidget {
                           child: Text(
                             e.value,
                             style: const TextStyle(fontSize: 16),
+                            maxLines: null, // 줄바꿈 허용
+                            overflow: TextOverflow.visible, // overflow 방지
                           ),
                         ),
                       ),

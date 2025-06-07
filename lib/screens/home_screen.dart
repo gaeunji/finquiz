@@ -29,30 +29,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<UserInfo> fetchUserInfo() async {
     final userId = '123'; // 임시 사용자 ID
     try {
-      debugPrint('Fetching user info for userId: $userId');
       final response = await http.get(
         Uri.parse('http://10.0.2.2:5000/users/$userId/info'),
       );
 
-      debugPrint('Response status code: ${response.statusCode}');
-      debugPrint('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        debugPrint('Parsed JSON data: $jsonData');
-        final userInfo = UserInfo.fromJson(jsonData);
-        debugPrint(
-          'Created UserInfo object: ${userInfo.username}, Level: ${userInfo.level}',
-        );
-        return userInfo;
+        return UserInfo.fromJson(jsonData);
       } else {
-        debugPrint(
-          'Failed to fetch user info. Status code: ${response.statusCode}',
-        );
         throw Exception('사용자 정보 불러오기 실패: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching user info: $e');
       throw Exception('사용자 정보 불러오기 실패: $e');
     }
   }
@@ -66,18 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        debugPrint('Server response: $data');
-        return data.map((q) {
-          debugPrint('Processing quiz: $q');
-          return TrendingQuiz.fromJson(q);
-        }).toList();
+        return data.map((q) => TrendingQuiz.fromJson(q)).toList();
       } else {
-        debugPrint('Server error: ${response.statusCode}');
-        debugPrint('Response body: ${response.body}');
         throw Exception('트렌딩 퀴즈 불러오기 실패: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching trending quizzes: $e');
       throw Exception('트렌딩 퀴즈 불러오기 실패: $e');
     }
   }
@@ -86,26 +66,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<WeeklyXp> fetchWeeklyXp() async {
     final userId = '123'; // 임시 사용자 ID
     try {
-      debugPrint('Fetching weekly XP for userId: $userId');
       final response = await http.get(
         Uri.parse('http://10.0.2.2:5000/users/$userId/weekly-xp'),
       );
 
-      debugPrint('Weekly XP response status code: ${response.statusCode}');
-      debugPrint('Weekly XP response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
-        debugPrint('Parsed weekly XP data: $jsonData');
         return WeeklyXp.fromJson(jsonData);
       } else {
-        debugPrint(
-          'Failed to fetch weekly XP. Status code: ${response.statusCode}',
-        );
         throw Exception('주간 XP 데이터 불러오기 실패: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error fetching weekly XP: $e');
       throw Exception('주간 XP 데이터 불러오기 실패: $e');
     }
   }

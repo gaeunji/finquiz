@@ -74,7 +74,6 @@ class CategoriesTab extends StatelessWidget {
       bgColor: Color(0xFFfefff2), // 연노랑
       textColor: Color(0xFFD97706),
     ),
-
     Category(
       id: "microeconomics",
       title: "미시경제학",
@@ -108,39 +107,19 @@ class CategoriesTab extends StatelessWidget {
       bgColor: Color(0xFFf5f2f5), // 연분홍
       textColor: Color(0xFFBE185D),
     ),
-    // Category( // 추후 시간 나면 업데이트
-    //   id: "economic-history",
-    //   title: "경제사",
-    //   subtitle: "경제 사상과 역사적 사건",
-    //   icon: "📈",
-    //   quizCount: 98,
-    //   progress: 25,
-    //   gradientColors: [Color(0xFF64748B), Color(0xFF475569)],
-    //   bgColor: Color(0xFFF1F5F9),
-    //   textColor: Color(0xFF334155),
-    // ),
   ];
 
   int _mapCategoryId(String id) {
-    switch (id) {
-      case 'basic-economics':
-        return 4;
-      case 'macroeconomics':
-        return 1;
-      case 'microeconomics':
-        return 5;
-      case 'international-trade':
-        return 2;
-      case 'finance':
-        return 3;
-      // case 'economic-history': return 6;
-      case 'current-affairs':
-        return 6;
-      case 'behavioral-economics':
-        return 7;
-      default:
-        return 0;
-    }
+    final Map<String, int> categoryMap = {
+      'basic-economics': 4,
+      'macroeconomics': 1,
+      'microeconomics': 5,
+      'international-trade': 2,
+      'finance': 3,
+      'current-affairs': 6,
+      'behavioral-economics': 7,
+    };
+    return categoryMap[id] ?? 0;
   }
 
   @override
@@ -187,7 +166,6 @@ class CategoriesTab extends StatelessWidget {
               ),
 
               SizedBox(height: 32),
-
             ],
           ),
         ),

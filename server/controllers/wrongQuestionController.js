@@ -12,11 +12,10 @@ exports.getWrongQuestions = async (req, res) => {
          q.correct_answer, ua.selected_answer, q.difficulty,
          c.name AS category
        FROM user_answers ua
-       JOIN quiz_sessions s ON ua.session_id = s.session_id
        JOIN questions q ON ua.question_id = q.question_id
        JOIN categories c ON q.category_id = c.id
-       WHERE s.user_id = $1 AND ua.is_correct = FALSE
-       ORDER BY ua.session_id DESC`,
+       WHERE ua.user_id = $1 AND ua.is_correct = FALSE
+       ORDER BY ua.question_id DESC`,
       [userId]
     );
 
