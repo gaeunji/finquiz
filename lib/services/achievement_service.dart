@@ -105,14 +105,19 @@ class AchievementService {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Achievement.fromMap(json)).toList();
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final List<dynamic> achievementsData = responseData['achievements'];
+        return achievementsData.map((json) {
+          print('Processing achievement data: $json');
+          return Achievement.fromMap(json);
+        }).toList();
       } else {
         throw Exception(
           '업적 업데이트 실패패: ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
+      print('Error updating achievements: $e');
       throw Exception('업적 업데이트 실패: $e');
     }
   }
