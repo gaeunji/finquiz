@@ -1,16 +1,20 @@
 # 📊 Economics Quiz App
 
-**Economics Quiz App**은 경제 지식을 재미있게 학습할 수 있도록 설계된 퀴즈 기반 모바일 애플리케이션입니다. 사용자는 다양한 경제 카테고리 중 관심 분야를 선택하고, 퀴즈를 통해 XP를 얻으며 레벨을 올릴 수 있습니다.
+FinQuiz는 경제 개념을 퀴즈 형식으로 학습할 수 있는 교육 앱입니다.
+퀴즈를 풀며 이론을 자연스럽게 익히고, 성취 기반의 피드백을 통해 학습 동기를 높일 수 있습니다.
 
 ---
+## 📱 스크린샷
+![image](https://github.com/user-attachments/assets/6b89800a-a588-48ef-9359-6f769e1dbe8e)
 
-## 📱 주요 기능 (Flutter Frontend)
+
+## 📝 주요 기능 (Flutter Frontend)
 
 ### Home Screen
 
 - 경험치(XP) 및 최근 학습 현황 대시보드
 - 연속 학습 일수 추적
-- "내 카테고리" 관리
+- 오늘의 퀴즈 및 트렌딩 퀴즈 풀이 가능
 
 ### Explore Screen
 
@@ -31,13 +35,14 @@
 
 ### 주요 API
 
-- `POST /quizzes/session` : 새 퀴즈 세션 생성
+- `POST /quizzes/session` : 새 퀴즈 세션 생성  
 - `GET /quizzes/:quizId` : 개별 퀴즈 조회
 - `POST /quizzes/session/:sessionId/complete` : 세션 결과 제출
 - `GET /quizzes/daily` : 오늘의 랜덤 퀴즈 제공
-- `GET /categories/`, `GET /categories/name/:name` : 카테고리 정보 조회
-- `POST /categories/user/:userId` : 내 카테고리 추가
-- `DELETE /categories/user/:userId/:categoryId` : 내 카테고리 삭제
+- `GET /quizzes/trending` : 트렌딩 퀴즈 제공
+- `POST /user-bookmarks/:userId/bookmarks`: 북마크 추가
+- `GET /users/:userId/info`: 사용자 정보 조회
+- `GET /users/:userId/weekly-xp`: 주간 획득 XP 조회 
 
 ---
 
@@ -64,7 +69,6 @@
 
 ## 📁 프로젝트 구조 요약
 
-\`\`\`
 📦 quiz_app_project/
 ├── lib/
 │ ├── screens/ # Flutter UI 화면
@@ -77,7 +81,6 @@
 │ ├── db.js # PostgreSQL 연결
 │ ├── app.js # Express 앱 구성
 │ └── server.js # 서버 실행 엔트리포인트
-\`\`\`
 
 ---
 
