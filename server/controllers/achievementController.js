@@ -3,29 +3,55 @@ const router = express.Router();
 const pool = require("../db");
 
 // 업적 평가 로직
-const evaluateAchievement = (achievement, userData) => {
+const evaluateAchievement = async (achievement, userData, userId) => {
   const { targetType, targetValue } = achievement;
   const { attributes } = achievement;
 
+  let isAchieved = false;
+  let currentValue = 0;
+
   switch (targetType) {
     case "total_quiz_count":
-      return userData.totalQuizCount >= targetValue;
+      currentValue = parseInt(userData.total_quiz_count) || 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     case "perfect_scores":
-      return userData.perfectScores >= targetValue;
+      currentValue = parseInt(userData.perfect_scores) || 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     case "consecutive_days":
-      return userData.consecutiveDays >= targetValue;
+      currentValue = parseInt(userData.consecutive_days) || 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     case "category_quiz_count":
       const categoryId = attributes?.categoryId;
-      return (
-        categoryId && userData.categoryQuizCounts[categoryId] >= targetValue
-      );
+      currentValue = categoryId
+        ? parseInt(userData.categoryQuizCounts?.[categoryId]) || 0
+        : 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     case "bookmark_count":
-      return userData.bookmarkCount >= targetValue;
+      currentValue = parseInt(userData.bookmark_count) || 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     case "xp_amount":
-      return userData.xpAmount >= targetValue;
+      currentValue = parseInt(userData.xp_amount) || 0;
+      isAchieved = currentValue >= targetValue;
+      break;
     default:
-      return false;
+      isAchieved = false;
   }
+
+  // 진행도가 100% 이상이면 업적 해제
+  const progress = Math.min(
+    Math.round((currentValue / targetValue) * 100),
+    100
+  );
+  if (progress >= 100) {
+    isAchieved = true;
+  }
+
+  return isAchieved;
 };
 
 // 업적 진행률 계산
@@ -36,25 +62,25 @@ const calculateProgress = (achievement, userData) => {
   let currentValue = 0;
   switch (targetType) {
     case "total_quiz_count":
-      currentValue = userData.totalQuizCount;
+      currentValue = parseInt(userData.total_quiz_count) || 0;
       break;
     case "perfect_scores":
-      currentValue = userData.perfectScores;
+      currentValue = parseInt(userData.perfect_scores) || 0;
       break;
     case "consecutive_days":
-      currentValue = userData.consecutiveDays;
+      currentValue = parseInt(userData.consecutive_days) || 0;
       break;
     case "category_quiz_count":
       const categoryId = attributes?.categoryId;
       currentValue = categoryId
-        ? userData.categoryQuizCounts[categoryId] || 0
+        ? parseInt(userData.categoryQuizCounts?.[categoryId]) || 0
         : 0;
       break;
     case "bookmark_count":
-      currentValue = userData.bookmarkCount;
+      currentValue = parseInt(userData.bookmark_count) || 0;
       break;
     case "xp_amount":
-      currentValue = userData.xpAmount;
+      currentValue = parseInt(userData.xp_amount) || 0;
       break;
   }
 
@@ -162,65 +188,47 @@ const getUserAchievements = async (req, res) => {
 };
 
 // 단일 업적 업데이트
-const updateUserAchievement = async (req, res) => {
+const updateUserAchievement = async (userId, achievementId, userData) => {
   try {
-    const { userId, achievementId, userData } = req.body;
-
-    // 업적 정보 조회
-    const achievementResult = await pool.query(
-      `SELECT 
-        id,
-        title,
-        description,
-        icon,
-        color,
-        target_type as "targetType",
-        target_value as "targetValue",
-        category_id as "categoryId",
-        created_at as "createdAt"
-      FROM achievements 
-      WHERE id = $1`,
-      [achievementId]
-    );
-
-    if (achievementResult.rows.length === 0) {
-      return res.status(404).json({ error: "업적을 찾을 수 없습니다." });
+    const achievement = await getAchievementById(achievementId);
+    if (!achievement) {
+      throw new Error("Achievement not found");
     }
 
-    const achievement = achievementResult.rows[0];
-    const isUnlocked = evaluateAchievement(achievement, userData);
+    const isAchieved = await evaluateAchievement(achievement, userData, userId);
     const progress = calculateProgress(achievement, userData);
 
-    // 업적 상태 업데이트
-    const result = await pool.query(
-      `INSERT INTO user_achievements 
-        (user_id, achievement_id, progress, unlocked, unlocked_at)
-      VALUES ($1, $2, $3, $4, CASE WHEN $4 = true THEN NOW() ELSE NULL END)
-      ON CONFLICT (user_id, achievement_id) DO UPDATE
-      SET 
-        progress = $3,
-        unlocked = $4,
-        unlocked_at = CASE 
-          WHEN $4 = true AND user_achievements.unlocked = false 
-          THEN NOW() 
-          ELSE user_achievements.unlocked_at 
-        END
-      RETURNING *`,
-      [userId, achievementId, progress, isUnlocked]
-    );
+    // 진행도가 100% 이상이면 unlocked를 true로 설정
+    const unlocked = progress >= 100 ? true : isAchieved;
 
-    res.json({
-      message: "업적이 업데이트되었습니다.",
-      achievement: {
-        ...achievement,
-        progress,
-        unlocked: isUnlocked,
-        unlockedAt: isUnlocked ? new Date() : null,
-      },
-    });
+    const query = `
+      UPDATE user_achievements 
+      SET 
+        unlocked = ?,
+        progress = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ? AND achievement_id = ?
+    `;
+
+    const [result] = await pool.query(query, [
+      unlocked,
+      progress,
+      userId,
+      achievementId,
+    ]);
+
+    if (result.affectedRows === 0) {
+      throw new Error("Failed to update user achievement");
+    }
+
+    return {
+      ...achievement,
+      unlocked,
+      progress,
+    };
   } catch (error) {
-    console.error("업적 업데이트 중 오류:", error);
-    res.status(500).json({ error: "업적 업데이트에 실패했습니다." });
+    console.error("Error updating user achievement:", error);
+    throw error;
   }
 };
 
@@ -228,6 +236,17 @@ const updateUserAchievement = async (req, res) => {
 const updateAllUserAchievements = async (req, res) => {
   try {
     const { userId, userData } = req.body;
+    const currentTimestamp = new Date();
+
+    console.log("Update all achievements request received:", {
+      userId,
+      userData,
+    });
+
+    if (!userId || !userData) {
+      console.error("Missing required data:", { userId, userData });
+      return res.status(400).json({ error: "필수 데이터가 누락되었습니다." });
+    }
 
     // 모든 업적 조회
     const achievementsResult = await pool.query(
@@ -245,45 +264,107 @@ const updateAllUserAchievements = async (req, res) => {
     );
     const achievements = achievementsResult.rows;
 
+    console.log("Found achievements:", achievements.length);
+
     // 각 업적에 대해 진행도 계산 및 업데이트
     const updatePromises = achievements.map(async (achievement) => {
-      const isUnlocked = evaluateAchievement(achievement, userData);
+      const isAchieved = await evaluateAchievement(
+        achievement,
+        userData,
+        userId
+      );
       const progress = calculateProgress(achievement, userData);
 
+      console.log("Processing achievement:", {
+        id: achievement.id,
+        isAchieved,
+        progress,
+      });
+
+      // 현재 업적 상태 확인
+      const currentStatus = await pool.query(
+        `SELECT unlocked FROM user_achievements 
+         WHERE user_id = $1 AND achievement_id = $2`,
+        [userId, achievement.id]
+      );
+
+      console.log("Current status for achievement:", {
+        id: achievement.id,
+        status: currentStatus.rows[0],
+      });
+
+      // 진행도가 100% 이상이면 unlocked를 true로 설정
+      const unlocked = progress >= 100 ? true : isAchieved;
+
+      // 업적 상태 업데이트
       return pool.query(
-        `INSERT INTO user_achievements 
-          (user_id, achievement_id, progress, unlocked, unlocked_at)
-        VALUES ($1, $2, $3, $4, CASE WHEN $4 = true THEN NOW() ELSE NULL END)
-        ON CONFLICT (user_id, achievement_id) DO UPDATE
-        SET 
-          progress = $3,
-          unlocked = $4,
-          unlocked_at = CASE 
-            WHEN $4 = true AND user_achievements.unlocked = false 
-            THEN NOW() 
-            ELSE user_achievements.unlocked_at 
-          END
-        RETURNING *`,
-        [userId, achievement.id, progress, isUnlocked]
+        `UPDATE user_achievements 
+         SET 
+           unlocked = $1,
+           progress = $2,
+           updated_at = $3
+         WHERE user_id = $4 AND achievement_id = $5`,
+        [unlocked, progress, currentTimestamp, userId, achievement.id]
       );
     });
 
     const results = await Promise.all(updatePromises);
     const updatedAchievements = results.map((result) => result.rows[0]);
 
+    console.log("All achievements updated:", updatedAchievements.length);
+
+    // 업데이트된 업적 정보와 함께 원본 업적 정보도 포함
+    const achievementsWithDetails = achievements.map((achievement) => {
+      const updatedInfo = updatedAchievements.find(
+        (ua) => ua.achievement_id === achievement.id
+      );
+      return {
+        ...achievement,
+        progress: updatedInfo?.progress || 0,
+        unlocked: updatedInfo?.unlocked || false,
+        unlockedAt: updatedInfo?.unlocked_at || null,
+        updatedAt: updatedInfo?.updated_at || null,
+      };
+    });
+
     res.json({
       message: "모든 업적이 업데이트되었습니다.",
-      achievements: updatedAchievements,
+      achievements: achievementsWithDetails,
     });
   } catch (error) {
     console.error("업적 일괄 업데이트 중 오류:", error);
-    res.status(500).json({ error: "업적 일괄 업데이트에 실패했습니다." });
+    res.status(500).json({
+      error: "업적 일괄 업데이트에 실패했습니다.",
+      details: error.message,
+    });
   }
 };
+
+const updateExistingAchievements = async () => {
+  try {
+    const query = `
+      UPDATE user_achievements 
+      SET 
+        unlocked = true,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE progress >= 100 AND unlocked = false
+    `;
+
+    const result = await pool.query(query);
+    return result.rowCount;
+  } catch (error) {
+    console.error("Error updating existing achievements:", error);
+    throw error;
+  }
+};
+
+// 기존 업적 업데이트 실행
+updateExistingAchievements().catch(console.error);
 
 module.exports = {
   getAllAchievements,
   getUserAchievements,
   updateUserAchievement,
   updateAllUserAchievements,
+  updateExistingAchievements,
 };

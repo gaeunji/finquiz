@@ -1,4 +1,5 @@
 const pool = require("../db");
+const achievementController = require("./achievementController");
 
 const categoryMap = {
   macro: 1,
@@ -144,12 +145,14 @@ exports.completeSession = async (req, res) => {
 
     const results = [];
     let correctCount = 0;
+    let categoryQuizCounts = {};
 
     for (const ans of answers) {
       const { questionId, selectedAnswer } = ans;
 
       const questionRes = await pool.query(
-        `SELECT question_text, correct_answer, explanation FROM questions WHERE question_id = $1`,
+        `SELECT question_text, correct_answer, explanation, category_id 
+         FROM questions WHERE question_id = $1`,
         [questionId]
       );
 
@@ -158,9 +161,14 @@ exports.completeSession = async (req, res) => {
       const questionText = questionRes.rows[0].question_text;
       const correctAnswer = questionRes.rows[0].correct_answer;
       const explanation = questionRes.rows[0].explanation;
+      const categoryId = questionRes.rows[0].category_id;
       const isCorrect = selectedAnswer === correctAnswer;
 
       if (isCorrect) correctCount++;
+
+      // 카테고리별 퀴즈 카운트 업데이트
+      categoryQuizCounts[categoryId] =
+        (categoryQuizCounts[categoryId] || 0) + 1;
 
       await pool.query(
         `INSERT INTO user_answers (user_id, question_id, selected_answer, is_correct)
@@ -217,12 +225,43 @@ exports.completeSession = async (req, res) => {
       xpEarned,
     ]);
 
+    // 사용자 데이터 조회
+    const userDataRes = await pool.query(
+      `SELECT 
+        (SELECT COUNT(*) FROM user_question_log WHERE user_id = $1) as total_quiz_count,
+        (SELECT COUNT(*) FROM user_answers WHERE user_id = $1 AND is_correct = true) as perfect_scores,
+        (SELECT xp FROM users WHERE user_id = $1) as xp_amount,
+        (SELECT COUNT(*) FROM bookmarked_questions WHERE user_id = $1) as bookmark_count,
+        (SELECT COUNT(*) FROM (
+          SELECT date_trunc('day', answered_at) as day
+          FROM user_question_log
+          WHERE user_id = $1
+          GROUP BY day
+          ORDER BY day DESC
+          LIMIT 1
+        ) as consecutive_days) as consecutive_days`,
+      [userId]
+    );
+
+    const userData = {
+      ...userDataRes.rows[0],
+      categoryQuizCounts,
+    };
+
+    // 업적 업데이트
+    await achievementController.updateAllUserAchievements(
+      {
+        body: { userId, userData },
+      },
+      { json: () => {} }
+    );
+
     // 응답 반환
     res.status(200).json({
       score: correctCount,
       total: answers.length,
       results,
-      xpEarned, // 클라이언트에 획득한 XP 정보 전달
+      xpEarned,
     });
   } catch (err) {
     console.error("세션 완료 실패:", err);

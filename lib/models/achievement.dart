@@ -26,7 +26,8 @@ class Achievement {
   });
 
   factory Achievement.fromMap(Map<String, dynamic> map) {
-    return Achievement(
+    print('Creating Achievement from map: $map');
+    final achievement = Achievement(
       id: map['id'] as int,
       title: map['title'] as String,
       description: map['description'] as String,
@@ -42,6 +43,8 @@ class Achievement {
               ? DateTime.parse(map['unlockedAt'] as String)
               : null,
     );
+    print('Created Achievement: ${achievement.toMap()}');
+    return achievement;
   }
 
   Map<String, dynamic> toMap() {
