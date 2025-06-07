@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/achievement.dart';
 import '../../models/user_achievement.dart';
 import '../../services/achievement_service.dart';
+import '../../widgets/achievements/achievement_card.dart';
 
 class AchievementsScreen extends StatefulWidget {
   final int userId;
@@ -178,147 +179,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
           ),
           itemBuilder: (context, index) {
             final achievement = _achievements[index];
-            return Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color:
-                    achievement.unlocked ?? false
-                        ? Colors.white
-                        : const Color(0xFFF0F0F0),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color:
-                      achievement.unlocked ?? false
-                          ? const Color(0xFF007AFF)
-                          : const Color(0xFFF0F0F0),
-                  width: achievement.unlocked ?? false ? 2 : 1,
-                ),
-                boxShadow: [
-                  if (achievement.unlocked ?? false)
-                    const BoxShadow(
-                      color: Color(0x29007AFF),
-                      blurRadius: 12,
-                      offset: Offset(0, 4),
-                    ),
-                  if (!(achievement.unlocked ?? false))
-                    const BoxShadow(
-                      color: Color(0x14000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            achievement.unlocked ?? false
-                                ? const Color(0xFF34C759)
-                                : const Color(0xFFF0F0F0),
-                      ),
-                      child: Center(
-                        child: Text(
-                          achievement.unlocked ?? false ? "✓" : "🔒",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                achievement.unlocked ?? false
-                                    ? Colors.white
-                                    : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          achievement.unlocked ?? false
-                              ? Colors.white
-                              : const Color(0xFFE0E0E0),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      achievement.icon ?? '🏆',
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    achievement.title,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          achievement.unlocked ?? false
-                              ? const Color(0xFF1A1A1A)
-                              : const Color(0xFF999999),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    achievement.description,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color:
-                          achievement.unlocked ?? false
-                              ? const Color(0xFF666666)
-                              : const Color(0xFFAAAAAA),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Stack(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      if (achievement.progress != null &&
-                          achievement.progress! > 0)
-                        FractionallySizedBox(
-                          widthFactor: achievement.progress! / 100,
-                          child: Container(
-                            height: 4,
-                            decoration: BoxDecoration(
-                              gradient:
-                                  achievement.unlocked ?? false
-                                      ? const LinearGradient(
-                                        colors: [
-                                          Color(0xFF007AFF),
-                                          Color(0xFF34C759),
-                                        ],
-                                      )
-                                      : const LinearGradient(
-                                        colors: [
-                                          Color(0xFFDDDDDD),
-                                          Color(0xFFDDDDDD),
-                                        ],
-                                      ),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+            return AchievementCard(
+              achievement: achievement,
+              onTap: () {
+                // 업적 상세 화면으로 이동하는 로직 추가 가능
+              },
             );
           },
         ),
