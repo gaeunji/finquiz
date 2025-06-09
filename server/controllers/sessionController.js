@@ -249,20 +249,31 @@ exports.completeSession = async (req, res) => {
     };
 
     // 업적 업데이트
-    await achievementController.updateAllUserAchievements(
-      {
-        body: { userId, userData },
-      },
-      { json: () => {} }
-    );
+    try {
+      const achievementResult =
+        await achievementController.updateAllUserAchievements({
+          body: { userId, userData },
+        });
 
-    // 응답 반환
-    res.status(200).json({
-      score: correctCount,
-      total: answers.length,
-      results,
-      xpEarned,
-    });
+      // 응답 반환
+      res.status(200).json({
+        score: correctCount,
+        total: answers.length,
+        results,
+        xpEarned,
+        achievements: achievementResult.achievements,
+      });
+    } catch (error) {
+      console.error("업적 업데이트 실패:", error);
+      // 업적 업데이트 실패해도 세션 완료는 성공으로 처리
+      res.status(200).json({
+        score: correctCount,
+        total: answers.length,
+        results,
+        xpEarned,
+        achievementError: "업적 업데이트에 실패했습니다.",
+      });
+    }
   } catch (err) {
     console.error("세션 완료 실패:", err);
     res.status(500).json({ error: err.message });
