@@ -297,26 +297,29 @@ const updateAllUserAchievements = async (req, res) => {
       const unlocked = progress >= 100 ? true : isAchieved;
 
       // 업적 상태 업데이트
-      return pool.query(
+      const result = await pool.query(
         `UPDATE user_achievements 
          SET 
            unlocked = $1,
            progress = $2,
            updated_at = $3
-         WHERE user_id = $4 AND achievement_id = $5`,
+         WHERE user_id = $4 AND achievement_id = $5
+         RETURNING achievement_id as id, unlocked, progress, updated_at`,
         [unlocked, progress, currentTimestamp, userId, achievement.id]
       );
+
+      return result.rows[0];
     });
 
     const results = await Promise.all(updatePromises);
-    const updatedAchievements = results.map((result) => result.rows[0]);
+    const updatedAchievements = results.filter((result) => result !== null);
 
     console.log("All achievements updated:", updatedAchievements.length);
 
     // 업데이트된 업적 정보와 함께 원본 업적 정보도 포함
     const achievementsWithDetails = achievements.map((achievement) => {
       const updatedInfo = updatedAchievements.find(
-        (ua) => ua.achievement_id === achievement.id
+        (ua) => ua && ua.id === achievement.id
       );
       return {
         ...achievement,
@@ -327,16 +330,13 @@ const updateAllUserAchievements = async (req, res) => {
       };
     });
 
-    res.json({
+    return {
       message: "모든 업적이 업데이트되었습니다.",
       achievements: achievementsWithDetails,
-    });
+    };
   } catch (error) {
     console.error("업적 일괄 업데이트 중 오류:", error);
-    res.status(500).json({
-      error: "업적 일괄 업데이트에 실패했습니다.",
-      details: error.message,
-    });
+    throw error;
   }
 };
 
